@@ -1,0 +1,10 @@
+{{- if .Values.nginx.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-nginx
+  namespace: {{ .Release.Namespace }}
+data:
+  default.conf: |
+{{ .Values.nginx.config | indent 4 }}
+{{- end }}

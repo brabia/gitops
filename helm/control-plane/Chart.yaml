@@ -1,0 +1,10 @@
+apiVersion: v2
+name: linexa
+description: Static nginx demo — GitOps on GKE
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+maintainers:
+  - name: Bassem Rabia
+    email: bassem@replen.it

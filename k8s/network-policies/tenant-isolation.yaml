@@ -1,0 +1,47 @@
+# Apply once per tenant namespace.
+# Replace the namespace field with the target tenant namespace.
+#
+# kubectl apply -f this file -n linexa-tenant-cfd4486
+# kubectl apply -f this file -n linexa-tenant-3622fab
+#
+# Effect: pods in this namespace accept inbound traffic ONLY from
+# the GCP LB health-checker (kube-system) and from pods within the
+# same namespace. All cross-tenant pod-to-pod traffic is dropped.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tenant-isolation
+spec:
+  podSelector: {}          # applies to every pod in the namespace
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # allow traffic from pods in the same namespace
+    - from:
+        - podSelector: {}
+    # allow GCP LB health checks (originate from kube-system)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+  egress:
+    # allow DNS (kube-dns in kube-system, UDP+TCP 53)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # allow outbound to the internet (GAR pulls, external APIs)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8      # block cross-namespace pod traffic
+              - 172.16.0.0/12
+              - 192.168.0.0/16

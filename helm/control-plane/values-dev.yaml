@@ -1,0 +1,18 @@
+# ── Dev overrides ─────────────────────────────────────────────────────────────
+
+image:
+  repository: nginx          # TODO: replace with your built image, e.g. europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane
+  tag: alpine
+
+service:
+  type: NodePort             # GKE GCE Ingress requires NodePort
+
+cloudArmor:
+  enabled: false
+  policyName: linexa-dev-allowlist
+
+ingress:
+  enabled: true
+  host: dev.linexa.eu
+  staticIpName: linexa-dev-ip
+  managedCert: false         # re-enable once real DNS points to the LB IP

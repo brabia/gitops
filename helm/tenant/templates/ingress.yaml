@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:
+  rules:
+    - host: {{ printf "dev.tenant-%s.linexa.eu" .Values.tenantId }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}
+                port:
+                  number: {{ .Values.service.port }}

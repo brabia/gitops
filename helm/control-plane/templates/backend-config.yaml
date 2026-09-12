@@ -1,0 +1,15 @@
+{{- if .Values.ingress.enabled }}
+# BackendConfig is required by GKE's ingress controller whenever a FrontendConfig
+# (HTTP→HTTPS redirect) is attached to the Ingress — even when Cloud Armor is off.
+# The spec is intentionally minimal when cloudArmor.enabled is false.
+apiVersion: cloud.google.com/v1beta1
+kind: BackendConfig
+metadata:
+  name: {{ .Release.Name }}-backend-config
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- if .Values.cloudArmor.enabled }}
+  securityPolicy:
+    name: {{ .Values.cloudArmor.policyName }}
+  {{- end }}
+{{- end }}

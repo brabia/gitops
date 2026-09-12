@@ -1,0 +1,6 @@
+tenantId: 3622fab
+
+image:
+  repository: europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-3622fab
+  tag: latest        # replaced by --set image.tag=$TAG at deploy time
+  pullPolicy: IfNotPresent

@@ -1,0 +1,1028 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>linexa — Architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap"/>
+<style>
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #EBF0F7;
+  --surface:     #FFFFFF;
+  --surface-2:   #F3F7FC;
+  --border:      #C8D5E6;
+  --border-dim:  #DDE6F0;
+  --text:        #0B1929;
+  --text-mid:    #3D5470;
+  --text-muted:  #6B869E;
+  --accent:      #0097A7;
+  --accent-bg:   #E2F4F6;
+  --accent-glow: rgba(0,151,167,0.25);
+  --code-bg:     #EAF0F8;
+  --code-text:   #1A3550;
+  --green:       #1A7F5A;
+  --orange:      #C25E00;
+  --green-bg:    #E3F5EE;
+  --orange-bg:   #FEF0E3;
+  --node-bg:     #F7FAFD;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:          #080C11;
+    --surface:     #0D1520;
+    --surface-2:   #101A28;
+    --border:      #1A2740;
+    --border-dim:  #131F30;
+    --text:        #C0D2E8;
+    --text-mid:    #6E90B0;
+    --text-muted:  #3F5C78;
+    --accent:      #00C4D0;
+    --accent-bg:   #002A30;
+    --accent-glow: rgba(0,196,208,0.2);
+    --code-bg:     #0A1422;
+    --code-text:   #A8C4DC;
+    --green:       #3BBEA0;
+    --orange:      #E8A44A;
+    --green-bg:    #002E1F;
+    --orange-bg:   #2C1A00;
+    --node-bg:     #0B1320;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:          #080C11;
+  --surface:     #0D1520;
+  --surface-2:   #101A28;
+  --border:      #1A2740;
+  --border-dim:  #131F30;
+  --text:        #C0D2E8;
+  --text-mid:    #6E90B0;
+  --text-muted:  #3F5C78;
+  --accent:      #00C4D0;
+  --accent-bg:   #002A30;
+  --accent-glow: rgba(0,196,208,0.2);
+  --code-bg:     #0A1422;
+  --code-text:   #A8C4DC;
+  --green:       #3BBEA0;
+  --orange:      #E8A44A;
+  --green-bg:    #002E1F;
+  --orange-bg:   #2C1A00;
+  --node-bg:     #0B1320;
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; scroll-behavior: smooth; }
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; }
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.container { max-width: 1000px; margin: 0 auto; padding: 0 1.5rem; }
+.section { padding: 3rem 0; border-top: 1px solid var(--border-dim); }
+h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+p { color: var(--text-mid); line-height: 1.7; max-width: 60ch; }
+
+/* ── Topbar ─────────────────────────────────────────────────────────────── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-inner {
+  display: flex; align-items: center;
+  justify-content: space-between; height: 50px; gap: 1rem;
+}
+.topbar-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem; font-weight: 800; letter-spacing: -0.03em;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; display: inline-block; }
+.topbar-nav { display: flex; gap: 1.5rem; list-style: none; }
+.topbar-nav a {
+  font-size: 0.75rem; font-weight: 500; color: var(--text-muted);
+  text-decoration: none; transition: color 0.15s;
+}
+.topbar-nav a:hover { color: var(--text); }
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+.hero { padding: 3rem 0 2rem; }
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 800; letter-spacing: -0.04em; line-height: 1.05;
+  margin-bottom: 0.8rem;
+}
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero-sub { font-size: 0.95rem; color: var(--text-mid); margin-bottom: 0; max-width: 58ch; }
+
+/* ── Main pipeline SVG ──────────────────────────────────────────────────── */
+.diagram-wrap {
+  width: 100%; overflow-x: auto; background: var(--surface);
+  border: 1px solid var(--border);
+}
+svg.pipeline { display: block; width: 100%; min-width: 700px; }
+
+/* SVG node styles */
+.node { cursor: pointer; }
+.node-bg {
+  fill: var(--node-bg); stroke: var(--border); stroke-width: 1;
+  transition: stroke 0.2s, filter 0.2s;
+}
+.node:hover .node-bg { stroke: var(--accent); }
+.node.active .node-bg { stroke: var(--accent); filter: drop-shadow(0 0 6px var(--accent-glow)); }
+.node-top { transition: fill 0.2s; }
+.node:hover .node-top,
+.node.active .node-top { fill: var(--accent); }
+.node-title { fill: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; }
+.node-sub { fill: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 8.5px; }
+.node-list { fill: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 8px; }
+.node-icon { font-size: 16px; }
+.node-label-env { font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 500; }
+.dev-inner { fill: var(--surface-2); stroke: var(--border-dim); stroke-width: 1; }
+
+/* Arrow paths */
+.arrow {
+  fill: none; stroke: var(--border);
+  stroke-width: 1.5; marker-end: url(#ah);
+}
+.arrow.flow {
+  stroke-dasharray: 7 4;
+  animation: flowAnim 2s linear infinite;
+}
+.arrow-green { stroke: var(--green); marker-end: url(#ah-green); }
+.arrow-orange { stroke: var(--orange); marker-end: url(#ah-orange); }
+.arrow-accent { stroke: var(--accent); marker-end: url(#ah-accent); }
+@keyframes flowAnim { to { stroke-dashoffset: -22; } }
+
+.arrow-label { font-family: 'JetBrains Mono', monospace; font-size: 8px; fill: var(--text-muted); }
+.arrow-label-green { fill: var(--green); }
+.arrow-label-orange { fill: var(--orange); }
+.ah-fill { fill: var(--border); }
+.ah-accent { fill: var(--accent); }
+.ah-green { fill: var(--green); }
+.ah-orange { fill: var(--orange); }
+
+/* ── Detail panel ───────────────────────────────────────────────────────── */
+.detail-panel {
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  padding: 1.2rem 1.5rem;
+  min-height: 100px;
+  transition: background 0.2s;
+}
+.detail-hint {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.04em;
+}
+.detail-hint-icon { font-size: 1rem; }
+.detail-content { display: none; }
+.detail-content.visible { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.detail-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em;
+  margin-bottom: 0.15rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.detail-version {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+  color: var(--accent); margin-bottom: 0.6rem; letter-spacing: 0.03em;
+}
+.detail-desc { font-size: 0.82rem; color: var(--text-mid); line-height: 1.65; }
+.detail-right {}
+.detail-section-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);
+  margin-bottom: 0.4rem; display: block;
+}
+.detail-facts { list-style: none; margin-bottom: 0.8rem; }
+.detail-facts li {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  color: var(--text-mid); padding: 0.2rem 0;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex; align-items: baseline; gap: 0.4rem;
+}
+.detail-facts li::before { content: '—'; color: var(--accent); flex-shrink: 0; }
+.detail-files { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.detail-file {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+  background: var(--code-bg); color: var(--accent);
+  padding: 0.15em 0.5em; border: 1px solid var(--border-dim);
+}
+@media (max-width: 600px) {
+  .detail-content.visible { grid-template-columns: 1fr; }
+  .topbar-nav { display: none; }
+}
+
+/* ── Sub-diagrams ───────────────────────────────────────────────────────── */
+.sub-diagram-wrap {
+  width: 100%; overflow-x: auto;
+  background: var(--surface); border: 1px solid var(--border);
+}
+svg.sub { display: block; width: 100%; min-width: 580px; }
+
+/* Sub-diagram node styles */
+.snode-bg { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
+.snode-top { fill: var(--border-dim); }
+.snode-title { fill: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; }
+.snode-sub { fill: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 8.5px; }
+.snode-detail { fill: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 8px; }
+.vol-bg { fill: var(--code-bg); stroke: var(--border); stroke-width: 1; }
+.boundary-bg { fill: none; stroke: var(--border); stroke-width: 1; stroke-dasharray: 5 3; }
+.boundary-label { fill: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; }
+.pod-bg { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: none; }
+.init-bg { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 1; }
+.emptydir-bg { fill: var(--code-bg); stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 2; }
+.nginx-bg { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
+.php-bg { fill: var(--surface-2); stroke: var(--accent); stroke-width: 1.5; }
+
+/* ── Helm tree ──────────────────────────────────────────────────────────── */
+.helm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.helm-tree-pane {
+  background: var(--code-bg); border: 1px solid var(--border);
+  overflow-x: auto;
+}
+.helm-tree-bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.55rem 1rem; border-bottom: 1px solid var(--border);
+}
+.tdot { width: 9px; height: 9px; border-radius: 50%; }
+.tdot-r { background: #FF5F57; } .tdot-y { background: #FEBC2E; } .tdot-g { background: #28C840; }
+.helm-tree-title { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-muted); margin-left: auto; }
+.helm-tree-body { padding: 1rem 1.2rem; }
+.helm-tree-body pre {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.76rem;
+  line-height: 1.85; color: var(--code-text); white-space: pre;
+}
+.t-dir { color: var(--accent); font-weight: 500; }
+.t-file { color: var(--code-text); }
+.t-cmt { color: var(--text-muted); font-style: italic; }
+.t-br { color: var(--border); user-select: none; }
+.helm-annotations { display: flex; flex-direction: column; gap: 0.8rem; }
+.helm-ann {
+  padding: 0.8rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-dim);
+}
+.helm-ann-title {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  color: var(--accent); margin-bottom: 0.3rem; font-weight: 500;
+}
+.helm-ann-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.55; }
+@media (max-width: 640px) {
+  .helm-grid { grid-template-columns: 1fr; }
+}
+
+/* ── GitOps cycle ───────────────────────────────────────────────────────── */
+.cycle-row {
+  display: flex; align-items: center; gap: 0;
+  overflow-x: auto; padding: 1.5rem 0;
+  min-width: 700px;
+}
+.cycle-step {
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.9rem 1rem;
+  min-width: 120px; text-align: center;
+  position: relative;
+}
+.cycle-step::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--border-dim);
+}
+.cycle-step.auto::before { background: var(--green); }
+.cycle-step.manual::before { background: var(--orange); }
+.cycle-icon { font-size: 1.3rem; margin-bottom: 0.25rem; }
+.cycle-name {
+  font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700;
+  color: var(--text); margin-bottom: 0.15rem;
+}
+.cycle-tag {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.06em;
+}
+.cycle-tag.auto { color: var(--green); }
+.cycle-tag.manual { color: var(--orange); }
+.cycle-arrow {
+  flex-shrink: 0; display: flex; flex-direction: column;
+  align-items: center; padding: 0 0.1rem;
+}
+.cycle-arrow-line {
+  height: 1px; width: 30px; background: var(--border);
+  position: relative; overflow: hidden;
+}
+.cycle-arrow-anim {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    90deg, var(--accent) 0, var(--accent) 5px, transparent 5px, transparent 10px
+  );
+  animation: slideRight 1.5s linear infinite;
+}
+@keyframes slideRight { from { transform: translateX(-10px); } to { transform: translateX(0px); } }
+.cycle-arrow-head {
+  width: 0; height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid var(--border);
+}
+
+/* ── Key ────────────────────────────────────────────────────────────────── */
+.key-row { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; }
+.key-item { display: flex; align-items: center; gap: 0.4rem; }
+.key-dash {
+  width: 24px; height: 2px;
+}
+.key-dash.green { background: var(--green); }
+.key-dash.orange { background: var(--orange); }
+.key-dash.normal { background: var(--border); }
+.key-dash.accent { background: var(--accent); }
+.key-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-muted); }
+
+/* ── Explanation blocks ─────────────────────────────────────────────────── */
+.explain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 1.5rem; }
+.explain-cell { background: var(--surface); padding: 1rem 1.1rem; }
+.explain-cell-title {
+  font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700;
+  margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem;
+}
+.explain-cell-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.55; }
+code {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+  background: var(--code-bg); color: var(--accent); padding: 0.1em 0.35em;
+}
+@media (max-width: 580px) { .explain-grid { grid-template-columns: 1fr; } }
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border-dim);
+  padding: 1.5rem 0; background: var(--surface); margin-top: 2rem;
+}
+.footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.footer-brand { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
+.footer-mono { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.03em; }
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ────────────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="container topbar-inner">
+    <div class="topbar-name"><span class="dot"></span>linexa</div>
+    <nav><ul class="topbar-nav">
+      <li><a href="#pipeline">Pipeline</a></li>
+      <li><a href="#local">Local Stack</a></li>
+      <li><a href="#pod">K8s Pod</a></li>
+      <li><a href="#helm">Helm Chart</a></li>
+      <li><a href="#gitops">GitOps Cycle</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────────── -->
+<div class="container">
+  <section class="hero">
+    <span class="eyebrow">Full architecture</span>
+    <h1>Every component,<br/><em>explained</em></h1>
+    <p class="hero-sub">Interactive diagrams covering all layers — from your local Docker Compose stack to ArgoCD managing Kubernetes in production. Click any node in the pipeline to explore it.</p>
+  </section>
+</div>
+
+<!-- ── Main Pipeline ──────────────────────────────────────────────────────────── -->
+<div class="container">
+  <section class="section" id="pipeline">
+    <span class="eyebrow">Deployment pipeline</span>
+    <h2>End-to-end architecture</h2>
+    <p style="margin-bottom:1.2rem">Click any component to see a detailed explanation. Animated arrows show live data flow direction.</p>
+
+    <div class="diagram-wrap">
+
+      <!-- SVG Pipeline Diagram -->
+      <svg class="pipeline" viewBox="0 0 820 545" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="linexa deployment pipeline diagram">
+        <defs>
+          <marker id="ah" markerWidth="6" markerHeight="5" refX="5.5" refY="2.5" orient="auto">
+            <path d="M 0 0 L 6 2.5 L 0 5 Z" class="ah-fill"/>
+          </marker>
+          <marker id="ah-accent" markerWidth="6" markerHeight="5" refX="5.5" refY="2.5" orient="auto">
+            <path d="M 0 0 L 6 2.5 L 0 5 Z" class="ah-accent"/>
+          </marker>
+          <marker id="ah-green" markerWidth="6" markerHeight="5" refX="5.5" refY="2.5" orient="auto">
+            <path d="M 0 0 L 6 2.5 L 0 5 Z" class="ah-green"/>
+          </marker>
+          <marker id="ah-orange" markerWidth="6" markerHeight="5" refX="5.5" refY="2.5" orient="auto">
+            <path d="M 0 0 L 6 2.5 L 0 5 Z" class="ah-orange"/>
+          </marker>
+        </defs>
+
+        <!-- ── Arrows (drawn before nodes so nodes appear on top) ── -->
+
+        <!-- 1. Dev Machine → GitHub Repo (git push) -->
+        <path class="arrow flow" d="M 210,75 C 340,75 460,48 578,48"/>
+        <text class="arrow-label" x="355" y="65">git push</text>
+
+        <!-- 2. GitHub Repo → GitHub Actions -->
+        <path class="arrow flow" d="M 688,102 L 688,143"/>
+
+        <!-- 3. GitHub Actions → GHCR -->
+        <path class="arrow flow" d="M 688,225 L 688,272"/>
+        <text class="arrow-label" x="697" y="252">docker push</text>
+
+        <!-- 4. GitHub Repo → ArgoCD (repo sync) -->
+        <path class="arrow flow arrow-accent" d="M 578,60 C 540,110 430,280 406,378"/>
+        <text class="arrow-label" x="484" y="220" style="fill:var(--accent)">repo sync</text>
+
+        <!-- 5. GHCR → ArgoCD (image poll) -->
+        <path class="arrow flow arrow-accent" d="M 688,344 L 688,365 C 688,395 590,410 518,410"/>
+        <text class="arrow-label" x="620" y="390" style="fill:var(--accent)">image poll</text>
+
+        <!-- 6. ArgoCD → K8s Staging (auto-sync) -->
+        <path class="arrow arrow-green" d="M 310,458 C 265,478 210,480 140,462"/>
+        <text class="arrow-label arrow-label-green" x="195" y="488">auto-sync</text>
+
+        <!-- 7. ArgoCD → K8s Production (manual) -->
+        <path class="arrow arrow-orange" d="M 506,458 C 560,478 610,480 670,462"/>
+        <text class="arrow-label arrow-label-orange" x="555" y="488">manual sync</text>
+
+        <!-- ── Dev Machine node ── -->
+        <g class="node" data-id="dev" role="button" tabindex="0" aria-label="Developer Machine">
+          <rect class="node-bg" x="20" y="22" width="190" height="155" rx="3"/>
+          <rect class="node-top" x="20" y="22" width="190" height="3" rx="1" style="fill:var(--border-dim)"/>
+          <!-- Docker Compose inner box -->
+          <rect class="dev-inner" x="36" y="60" width="158" height="100" rx="2"/>
+          <text x="115" y="78" text-anchor="middle" class="node-sub" style="font-size:7.5px;letter-spacing:0.06em;text-transform:uppercase">docker compose</text>
+          <text x="52" y="95" class="node-list">● nginx      :8080→:80</text>
+          <text x="52" y="108" class="node-list">● php-fpm   :9000</text>
+          <text x="52" y="121" class="node-list">● mysql     :3306</text>
+          <text x="52" y="134" class="node-list">● adminer   :8081 (tools)</text>
+          <text x="52" y="36" class="node-icon">💻</text>
+          <text x="76" y="38" class="node-title" dominant-baseline="middle">Developer Machine</text>
+          <text x="76" y="52" class="node-sub" dominant-baseline="middle">make up · hot-reload</text>
+        </g>
+
+        <!-- ── GitHub Repo node ── -->
+        <g class="node" data-id="github-repo" role="button" tabindex="0" aria-label="GitHub Repository">
+          <rect class="node-bg" x="578" y="22" width="210" height="80" rx="3"/>
+          <rect class="node-top" x="578" y="22" width="210" height="3" rx="1" style="fill:var(--border-dim)"/>
+          <text x="600" y="52" class="node-icon">📁</text>
+          <text x="622" y="48" class="node-title" dominant-baseline="middle">GitHub Repo</text>
+          <text x="622" y="62" class="node-sub" dominant-baseline="middle">source of truth</text>
+          <text x="600" y="85" class="node-sub">app/ · helm/ · argocd/ · k8s/</text>
+        </g>
+
+        <!-- ── GitHub Actions node ── -->
+        <g class="node" data-id="github-actions" role="button" tabindex="0" aria-label="GitHub Actions CI">
+          <rect class="node-bg" x="578" y="143" width="210" height="82" rx="3"/>
+          <rect class="node-top" x="578" y="143" width="210" height="3" rx="1" style="fill:var(--border-dim)"/>
+          <text x="600" y="175" class="node-icon">⚡</text>
+          <text x="622" y="169" class="node-title" dominant-baseline="middle">GitHub Actions</text>
+          <text x="622" y="183" class="node-sub" dominant-baseline="middle">build · lint · push</text>
+          <text x="600" y="208" class="node-sub">build-push.yml  helm-lint.yml</text>
+        </g>
+
+        <!-- ── GHCR node ── -->
+        <g class="node" data-id="ghcr" role="button" tabindex="0" aria-label="Container Registry GHCR">
+          <rect class="node-bg" x="578" y="272" width="210" height="72" rx="3"/>
+          <rect class="node-top" x="578" y="272" width="210" height="3" rx="1" style="fill:var(--border-dim)"/>
+          <text x="600" y="300" class="node-icon">📦</text>
+          <text x="622" y="297" class="node-title" dominant-baseline="middle">GHCR Registry</text>
+          <text x="622" y="311" class="node-sub" dominant-baseline="middle">container images</text>
+          <text x="600" y="332" class="node-sub">ghcr.io/linexa/linexa:&lt;sha&gt;</text>
+        </g>
+
+        <!-- ── ArgoCD node ── -->
+        <g class="node" data-id="argocd" role="button" tabindex="0" aria-label="ArgoCD GitOps controller">
+          <rect class="node-bg" x="291" y="378" width="228" height="80" rx="3"/>
+          <rect class="node-top" x="291" y="378" width="228" height="3" rx="1" style="fill:var(--border-dim)"/>
+          <text x="312" y="410" class="node-icon">🔄</text>
+          <text x="334" y="406" class="node-title" dominant-baseline="middle">ArgoCD</text>
+          <text x="334" y="420" class="node-sub" dominant-baseline="middle">GitOps controller</text>
+          <text x="312" y="445" class="node-sub">AppProject · sync windows · RBAC</text>
+        </g>
+
+        <!-- ── K8s Staging node ── -->
+        <g class="node" data-id="k8s-staging" role="button" tabindex="0" aria-label="Kubernetes Staging">
+          <rect class="node-bg" x="20" y="462" width="220" height="75" rx="3"/>
+          <rect x="20" y="462" width="220" height="3" rx="1" style="fill:var(--green)"/>
+          <text x="42" y="488" class="node-icon">☸</text>
+          <text x="64" y="484" class="node-title" dominant-baseline="middle">K8s Staging</text>
+          <text x="64" y="498" class="node-sub" dominant-baseline="middle" style="fill:var(--green)">auto-sync</text>
+          <text x="42" y="524" class="node-sub">1 replica · 5Gi MySQL</text>
+        </g>
+
+        <!-- ── K8s Production node ── -->
+        <g class="node" data-id="k8s-production" role="button" tabindex="0" aria-label="Kubernetes Production">
+          <rect class="node-bg" x="555" y="462" width="240" height="75" rx="3"/>
+          <rect x="555" y="462" width="240" height="3" rx="1" style="fill:var(--orange)"/>
+          <text x="577" y="488" class="node-icon">☸</text>
+          <text x="599" y="484" class="node-title" dominant-baseline="middle">K8s Production</text>
+          <text x="599" y="498" class="node-sub" dominant-baseline="middle" style="fill:var(--orange)">manual sync</text>
+          <text x="577" y="524" class="node-sub">3–20 replicas · HPA · TLS · 50Gi</text>
+        </g>
+
+        <!-- Click hint text -->
+        <text x="410" y="540" text-anchor="middle" class="node-sub" style="font-size:8px;font-style:italic">↑ click any node</text>
+      </svg>
+
+      <!-- Detail panel -->
+      <div class="detail-panel" id="detail-panel">
+        <div class="detail-hint" id="detail-hint">
+          <span class="detail-hint-icon">👆</span>
+          <span>Click any component above to see a detailed explanation of what it does and which files are involved.</span>
+        </div>
+        <div class="detail-content" id="detail-content">
+          <div>
+            <div class="detail-title" id="d-title">Title</div>
+            <div class="detail-version" id="d-version">version</div>
+            <div class="detail-desc" id="d-desc">desc</div>
+          </div>
+          <div class="detail-right">
+            <span class="detail-section-label">Key facts</span>
+            <ul class="detail-facts" id="d-facts"></ul>
+            <span class="detail-section-label">Files</span>
+            <div class="detail-files" id="d-files"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /diagram-wrap -->
+
+    <!-- Legend -->
+    <div class="key-row">
+      <div class="key-item"><div class="key-dash green"></div><span class="key-label">auto-sync (staging)</span></div>
+      <div class="key-item"><div class="key-dash orange"></div><span class="key-label">manual sync (production)</span></div>
+      <div class="key-item"><div class="key-dash accent"></div><span class="key-label">ArgoCD sync channel</span></div>
+      <div class="key-item"><div class="key-dash normal" style="stroke-dasharray:4 2"></div><span class="key-label">animated = live flow</span></div>
+    </div>
+  </section>
+</div>
+
+<!-- ── Local Dev Stack ─────────────────────────────────────────────────────────── -->
+<div class="container">
+  <section class="section" id="local">
+    <span class="eyebrow">docker compose</span>
+    <h2>Local development stack</h2>
+    <p style="margin-bottom:1.2rem">Run <code>make up</code>. Four services start in one Docker network. Nginx is the only container with a published port (8080). PHP source code is bind-mounted for instant hot-reload without rebuilding the image.</p>
+
+    <div class="sub-diagram-wrap">
+      <svg class="sub" viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" aria-label="Docker Compose network diagram">
+
+        <!-- Network boundary -->
+        <rect class="boundary-bg" x="120" y="10" width="530" height="315" rx="3"/>
+        <text class="boundary-label" x="132" y="27">docker network: backend (internal)</text>
+
+        <!-- Browser (outside) -->
+        <rect class="snode-bg" x="10" y="135" width="95" height="60" rx="3"/>
+        <rect class="snode-top" x="10" y="135" width="95" height="3" rx="1"/>
+        <text x="57" y="160" text-anchor="middle" class="snode-title">Browser</text>
+        <text x="57" y="174" text-anchor="middle" class="snode-sub">localhost</text>
+
+        <!-- Browser → Nginx arrow -->
+        <path class="arrow flow" d="M 105,165 L 147,108"/>
+        <text class="arrow-label" x="108" y="148">:8080</text>
+
+        <!-- Nginx container -->
+        <rect class="snode-bg" x="145" y="60" width="145" height="85" rx="3"/>
+        <rect class="snode-top" x="145" y="60" width="145" height="3" rx="1" style="fill:var(--accent)"/>
+        <text x="218" y="85" text-anchor="middle" class="snode-title">nginx</text>
+        <text x="218" y="99" text-anchor="middle" class="snode-sub">nginx:1.27-alpine</text>
+        <text x="162" y="115" class="snode-detail">listens    :80 (→8080)</text>
+        <text x="162" y="126" class="snode-detail">fastcgi_pass  php:9000</text>
+        <text x="162" y="137" class="snode-detail">serves /var/www/html</text>
+
+        <!-- Nginx → PHP-FPM -->
+        <path class="arrow flow" d="M 290,102 L 345,102"/>
+        <text class="arrow-label" x="297" y="96">FastCGI</text>
+        <text class="arrow-label" x="297" y="106">:9000</text>
+
+        <!-- PHP-FPM container -->
+        <rect class="snode-bg" x="345" y="60" width="145" height="85" rx="3"/>
+        <rect class="snode-top" x="345" y="60" width="145" height="3" rx="1" style="fill:var(--accent)"/>
+        <text x="418" y="85" text-anchor="middle" class="snode-title">php-fpm</text>
+        <text x="418" y="99" text-anchor="middle" class="snode-sub">php:8.3-fpm-alpine</text>
+        <text x="362" y="115" class="snode-detail">listens    :9000</text>
+        <text x="362" y="126" class="snode-detail">runs as    www-data</text>
+        <text x="362" y="137" class="snode-detail">exts: pdo_mysql, mbstring</text>
+
+        <!-- PHP-FPM → MySQL arrow -->
+        <path class="arrow flow" d="M 418,145 L 418,215"/>
+        <text class="arrow-label" x="425" y="185">PDO · :3306</text>
+
+        <!-- MySQL container -->
+        <rect class="snode-bg" x="345" y="215" width="145" height="85" rx="3"/>
+        <rect class="snode-top" x="345" y="215" width="145" height="3" rx="1" style="fill:var(--border-dim)"/>
+        <text x="418" y="240" text-anchor="middle" class="snode-title">mysql</text>
+        <text x="418" y="254" text-anchor="middle" class="snode-sub">mysql:8.0</text>
+        <text x="362" y="270" class="snode-detail">listens    :3306 (published)</text>
+        <text x="362" y="281" class="snode-detail">db: linexa  utf8mb4</text>
+        <text x="362" y="292" class="snode-detail">vol: mysql_data (persist)</text>
+
+        <!-- Adminer (tools profile) -->
+        <rect x="145" y="215" width="145" height="85" rx="3" style="fill:var(--surface);stroke:var(--border);stroke-dasharray:5 3;stroke-width:1"/>
+        <rect x="145" y="215" width="145" height="3" rx="1" style="fill:var(--border-dim)"/>
+        <text x="218" y="240" text-anchor="middle" class="snode-title" style="fill:var(--text-muted)">adminer</text>
+        <text x="218" y="254" text-anchor="middle" class="snode-sub">profile: tools</text>
+        <text x="162" y="270" class="snode-detail">port :8081→:8080</text>
+        <text x="162" y="281" class="snode-detail">docker compose</text>
+        <text x="162" y="292" class="snode-detail">  --profile tools up</text>
+
+        <!-- Adminer → MySQL -->
+        <path class="arrow" d="M 290,257 L 345,257" style="stroke-dasharray:4 3"/>
+
+        <!-- Volume: ./app/src (bind mount) -->
+        <rect class="vol-bg" x="528" y="55" width="98" height="47" rx="2"/>
+        <text x="577" y="74" text-anchor="middle" class="snode-sub" style="font-size:7.5px;letter-spacing:0.05em;text-transform:uppercase">bind mount</text>
+        <text x="577" y="87" text-anchor="middle" class="snode-sub">./app/src</text>
+        <!-- Vol → PHP-FPM -->
+        <path class="arrow" d="M 528,79 L 490,95" style="stroke-dasharray:3 2"/>
+
+        <!-- Volume: mysql_data (named vol) -->
+        <rect class="vol-bg" x="528" y="225" width="98" height="47" rx="2"/>
+        <text x="577" y="244" text-anchor="middle" class="snode-sub" style="font-size:7.5px;letter-spacing:0.05em;text-transform:uppercase">named volume</text>
+        <text x="577" y="257" text-anchor="middle" class="snode-sub">mysql_data</text>
+        <!-- Vol → MySQL -->
+        <path class="arrow" d="M 528,248 L 490,248" style="stroke-dasharray:3 2"/>
+
+      </svg>
+    </div>
+
+    <div class="explain-grid">
+      <div class="explain-cell">
+        <div class="explain-cell-title">⚡ Hot-reload</div>
+        <div class="explain-cell-desc">The <code>./app/src</code> directory is mounted into the PHP-FPM container as a bind mount. Every file save is immediately live — no rebuild, no restart. The <code>docker-compose.override.yml</code> adds Xdebug config on top.</div>
+      </div>
+      <div class="explain-cell">
+        <div class="explain-cell-title">🌐 Network isolation</div>
+        <div class="explain-cell-desc">The <code>backend</code> network is <code>internal: true</code>, blocking internet access from PHP and MySQL. Only Nginx bridges to the <code>frontend</code> network where port 8080 is published. Adminer also bridges both networks for DB access.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── K8s Pod Anatomy ─────────────────────────────────────────────────────────── -->
+<div class="container">
+  <section class="section" id="pod">
+    <span class="eyebrow">kubernetes</span>
+    <h2>Pod anatomy — sidecar pattern</h2>
+    <p style="margin-bottom:1.2rem">In Kubernetes, Nginx and PHP-FPM share a single Pod. An <code>initContainer</code> bridges the gap: it copies PHP files into a shared <code>emptyDir</code> volume, giving both containers access to the application without duplicating the image.</p>
+
+    <div class="sub-diagram-wrap">
+      <svg class="sub" viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg" aria-label="Kubernetes Pod anatomy diagram">
+
+        <!-- Pod boundary -->
+        <rect class="pod-bg" x="15" y="10" width="668" height="365" rx="4"/>
+        <text x="32" y="30" style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--accent);letter-spacing:0.08em;text-transform:uppercase">Pod: linexa-app-&lt;hash&gt;</text>
+
+        <!-- initContainer -->
+        <rect class="init-bg" x="42" y="42" width="612" height="58" rx="3"/>
+        <text x="62" y="64" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:0.06em;text-transform:uppercase;fill:var(--accent)">initContainer</text>
+        <text x="62" y="80" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;fill:var(--text)">app-copy</text>
+        <text x="200" y="62" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-mid)">image: ghcr.io/linexa/linexa:&lt;sha&gt;</text>
+        <text x="200" y="76" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">cmd: cp -rp /var/www/html/. /shared/</text>
+        <text x="200" y="90" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">Runs once, exits 0, then main containers start.</text>
+
+        <!-- Arrow: initContainer → emptyDir -->
+        <path d="M 348,100 L 348,128" class="arrow flow arrow-accent"/>
+        <text x="355" y="117" style="font-family:'JetBrains Mono',monospace;font-size:8px;fill:var(--accent)">writes</text>
+
+        <!-- emptyDir -->
+        <rect class="emptydir-bg" x="205" y="128" width="286" height="44" rx="3"/>
+        <text x="348" y="146" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:0.06em;text-transform:uppercase;fill:var(--accent)">emptyDir: app-files</text>
+        <text x="348" y="162" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:8px;fill:var(--text-muted)">shared in-memory volume · lives with the Pod</text>
+
+        <!-- Arrows: emptyDir → containers -->
+        <path d="M 280,172 L 205,222" class="arrow flow arrow-accent"/>
+        <path d="M 416,172 L 495,222" class="arrow flow arrow-accent"/>
+        <text x="195" y="202" style="font-family:'JetBrains Mono',monospace;font-size:7.5px;fill:var(--accent)">mountPath</text>
+        <text x="195" y="213" style="font-family:'JetBrains Mono',monospace;font-size:7.5px;fill:var(--accent)">/var/www/html</text>
+        <text x="476" y="202" style="font-family:'JetBrains Mono',monospace;font-size:7.5px;fill:var(--accent)">mountPath</text>
+        <text x="476" y="213" style="font-family:'JetBrains Mono',monospace;font-size:7.5px;fill:var(--accent)">/var/www/html</text>
+
+        <!-- Nginx container -->
+        <rect class="nginx-bg" x="42" y="222" width="285" height="130" rx="3"/>
+        <rect x="42" y="222" width="285" height="3" rx="1" style="fill:var(--border-dim)"/>
+        <text x="62" y="244" style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;fill:var(--text-muted)">Container</text>
+        <text x="62" y="262" style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;fill:var(--text)">nginx</text>
+        <text x="140" y="262" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">nginx:1.27-alpine</text>
+        <text x="62" y="283" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-mid)">port :80  →  Service port 80</text>
+        <text x="62" y="296" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">/var/www/html  (read-only)</text>
+        <text x="62" y="309" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">config from ConfigMap</text>
+        <text x="62" y="322" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">liveness + readiness on /health.php</text>
+        <text x="62" y="342" style="font-family:'JetBrains Mono',monospace;font-size:8px;fill:var(--text-muted)">emptyDir vols: tmp · cache · run</text>
+
+        <!-- FastCGI arrow between containers -->
+        <path d="M 327,295 L 373,295" class="arrow flow" style="stroke:var(--accent);marker-end:url(#ah-accent)"/>
+        <text x="330" y="287" style="font-family:'JetBrains Mono',monospace;font-size:7.5px;fill:var(--accent)">FastCGI</text>
+        <text x="332" y="308" style="font-family:'JetBrains Mono',monospace;font-size:7.5px;fill:var(--accent)">127.0.0.1</text>
+        <text x="338" y="320" style="font-family:'JetBrains Mono',monospace;font-size:7.5px;fill:var(--accent)">:9000</text>
+
+        <!-- PHP-FPM container -->
+        <rect class="php-bg" x="373" y="222" width="285" height="130" rx="3"/>
+        <rect x="373" y="222" width="285" height="3" rx="1" style="fill:var(--accent)"/>
+        <text x="393" y="244" style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;fill:var(--accent)">Container</text>
+        <text x="393" y="262" style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;fill:var(--text)">php-fpm</text>
+        <text x="470" y="262" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">php:8.3-fpm-alpine</text>
+        <text x="393" y="283" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-mid)">port :9000  (not exposed)</text>
+        <text x="393" y="296" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">/var/www/html  (read-write)</text>
+        <text x="393" y="309" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">runs as www-data (uid 82)</text>
+        <text x="393" y="322" style="font-family:'JetBrains Mono',monospace;font-size:8.5px;fill:var(--text-muted)">ext: pdo_mysql mbstring intl</text>
+        <text x="393" y="342" style="font-family:'JetBrains Mono',monospace;font-size:8px;fill:var(--text-muted)">envFrom: Secret (DB creds)</text>
+      </svg>
+    </div>
+
+    <div class="explain-grid">
+      <div class="explain-cell">
+        <div class="explain-cell-title">💡 Why sidecar?</div>
+        <div class="explain-cell-desc">Nginx needs static files to serve directly and PHP files to hand to FastCGI. Rather than baking Nginx config with the app image (coupling), they are separate containers that share one volume. They scale together as a unit and communicate over <code>localhost</code> — no network hop.</div>
+      </div>
+      <div class="explain-cell">
+        <div class="explain-cell-title">🔒 Security posture</div>
+        <div class="explain-cell-desc">PHP-FPM runs as <code>www-data</code> (uid 82). <code>readOnlyRootFilesystem: true</code> on the PHP container — <code>emptyDir</code> volumes provide the writable paths (<code>/tmp</code> and <code>/var/www/html</code> from the init). DB password comes from a Kubernetes Secret, never the image or ConfigMap.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── Helm Chart ────────────────────────────────────────────────────────────────── -->
+<div class="container">
+  <section class="section" id="helm">
+    <span class="eyebrow">helm chart</span>
+    <h2>Chart structure</h2>
+    <p style="margin-bottom:1.5rem">A single chart renders all resources for any environment. The values files cascade: <code>values.yaml</code> sets defaults; environment files override only what changes.</p>
+
+    <div class="helm-grid">
+      <div>
+        <div class="helm-tree-pane">
+          <div class="helm-tree-bar">
+            <div class="tdot tdot-r"></div><div class="tdot tdot-y"></div><div class="tdot tdot-g"></div>
+            <div class="helm-tree-title">helm/control-plane/</div>
+          </div>
+          <div class="helm-tree-body">
+<pre><span class="t-br">.</span>
+<span class="t-br">├── </span><span class="t-file">Chart.yaml</span>          <span class="t-cmt">v0.1.0, appVersion 1.0.0</span>
+<span class="t-br">├── </span><span class="t-file">values.yaml</span>         <span class="t-cmt">← canonical defaults</span>
+<span class="t-br">├── </span><span class="t-file">values-staging.yaml</span> <span class="t-cmt">← 1 replica, debug=true</span>
+<span class="t-br">├── </span><span class="t-file">values-production.yaml</span> <span class="t-cmt">← 3r, HPA, TLS</span>
+<span class="t-br">└── </span><span class="t-dir">templates/</span>
+<span class="t-br">    ├── </span><span class="t-file">_helpers.tpl</span>        <span class="t-cmt">name · labels · image</span>
+<span class="t-br">    ├── </span><span class="t-file">NOTES.txt</span>           <span class="t-cmt">post-install guidance</span>
+<span class="t-br">    ├── </span><span class="t-file">serviceaccount.yaml</span> <span class="t-cmt">non-root SA</span>
+<span class="t-br">    ├── </span><span class="t-file">configmap-nginx.yaml</span><span class="t-cmt"> nginx config K8s</span>
+<span class="t-br">    ├── </span><span class="t-file">secret-app.yaml</span>     <span class="t-cmt">⚠ placeholder only</span>
+<span class="t-br">    ├── </span><span class="t-file">deployment-app.yaml</span> <span class="t-cmt">sidecar Deployment</span>
+<span class="t-br">    ├── </span><span class="t-file">service-app.yaml</span>    <span class="t-cmt">ClusterIP :80</span>
+<span class="t-br">    ├── </span><span class="t-file">statefulset-mysql.yaml</span><span class="t-cmt"> + initdb CM</span>
+<span class="t-br">    ├── </span><span class="t-file">service-mysql.yaml</span>  <span class="t-cmt">ClusterIP + headless</span>
+<span class="t-br">    ├── </span><span class="t-file">ingress.yaml</span>        <span class="t-cmt">nginx-ingress class</span>
+<span class="t-br">    └── </span><span class="t-file">hpa.yaml</span>            <span class="t-cmt">CPU+mem, v2 API</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="helm-annotations">
+        <div class="helm-ann">
+          <div class="helm-ann-title">deployment-app.yaml</div>
+          <div class="helm-ann-desc">The heart of the chart. Defines a RollingUpdate Deployment with the initContainer + nginx + php-fpm sidecar pattern. <code>maxSurge: 1, maxUnavailable: 0</code> ensures zero-downtime deploys. References the nginx ConfigMap and app Secret by name.</div>
+        </div>
+        <div class="helm-ann">
+          <div class="helm-ann-title">statefulset-mysql.yaml</div>
+          <div class="helm-ann-desc">MySQL as a StatefulSet with a <code>volumeClaimTemplate</code> for the PVC. A sibling ConfigMap holds the <code>init.sql</code> script mounted at <code>/docker-entrypoint-initdb.d/</code>. A headless Service enables stable DNS (<code>linexa-mysql-headless</code>) for the StatefulSet.</div>
+        </div>
+        <div class="helm-ann">
+          <div class="helm-ann-title">hpa.yaml (production only)</div>
+          <div class="helm-ann-desc">HorizontalPodAutoscaler using the <code>autoscaling/v2</code> API. Scales on both CPU (65%) and memory (75%). Scale-down is stabilized for 5 minutes to avoid thrashing. Scale-up adds at most 2 pods per minute.</div>
+        </div>
+        <div class="helm-ann">
+          <div class="helm-ann-title">secret-app.yaml — ⚠ replace</div>
+          <div class="helm-ann-desc">Ships with <code>changeme</code> placeholders and <code>helm.sh/resource-policy: keep</code> (survives <code>helm uninstall</code>). Replace with <strong>Sealed Secrets</strong>, <strong>External Secrets Operator</strong>, or <strong>SOPS</strong> before any shared deploy.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── GitOps Cycle ──────────────────────────────────────────────────────────────── -->
+<div class="container">
+  <section class="section" id="gitops">
+    <span class="eyebrow">GitOps lifecycle</span>
+    <h2>From commit to production</h2>
+    <p style="margin-bottom:1.5rem">Six steps from code change to live deployment. Green steps are automatic; orange steps require a deliberate human action.</p>
+
+    <div style="overflow-x:auto">
+      <div class="cycle-row">
+
+        <div class="cycle-step auto">
+          <div class="cycle-icon">📝</div>
+          <div class="cycle-name">Code PR</div>
+          <div class="cycle-tag auto">auto</div>
+        </div>
+        <div class="cycle-arrow">
+          <div class="cycle-arrow-line"><div class="cycle-arrow-anim"></div></div>
+          <div class="cycle-arrow-head"></div>
+        </div>
+
+        <div class="cycle-step auto">
+          <div class="cycle-icon">🔍</div>
+          <div class="cycle-name">Helm Lint</div>
+          <div class="cycle-tag auto">auto</div>
+        </div>
+        <div class="cycle-arrow">
+          <div class="cycle-arrow-line"><div class="cycle-arrow-anim"></div></div>
+          <div class="cycle-arrow-head"></div>
+        </div>
+
+        <div class="cycle-step auto">
+          <div class="cycle-icon">🔀</div>
+          <div class="cycle-name">Merge → Build</div>
+          <div class="cycle-tag auto">auto</div>
+        </div>
+        <div class="cycle-arrow">
+          <div class="cycle-arrow-line"><div class="cycle-arrow-anim"></div></div>
+          <div class="cycle-arrow-head"></div>
+        </div>
+
+        <div class="cycle-step auto">
+          <div class="cycle-icon">☸</div>
+          <div class="cycle-name">Staging Sync</div>
+          <div class="cycle-tag auto">auto · 3 min</div>
+        </div>
+        <div class="cycle-arrow">
+          <div class="cycle-arrow-line"><div class="cycle-arrow-anim" style="background: repeating-linear-gradient(90deg, var(--orange) 0, var(--orange) 5px, transparent 5px, transparent 10px)"></div></div>
+          <div class="cycle-arrow-head"></div>
+        </div>
+
+        <div class="cycle-step manual">
+          <div class="cycle-icon">🎯</div>
+          <div class="cycle-name">Promote</div>
+          <div class="cycle-tag manual">manual PR</div>
+        </div>
+        <div class="cycle-arrow">
+          <div class="cycle-arrow-line"><div class="cycle-arrow-anim" style="background: repeating-linear-gradient(90deg, var(--orange) 0, var(--orange) 5px, transparent 5px, transparent 10px)"></div></div>
+          <div class="cycle-arrow-head"></div>
+        </div>
+
+        <div class="cycle-step manual">
+          <div class="cycle-icon">🚀</div>
+          <div class="cycle-name">Prod Sync</div>
+          <div class="cycle-tag manual">manual sync</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="explain-grid" style="margin-top:1.5rem">
+      <div class="explain-cell">
+        <div class="explain-cell-title">📝 Code PR → Helm Lint</div>
+        <div class="explain-cell-desc">Every PR touching <code>helm/**</code> triggers <code>helm-lint.yml</code>: lints all three value sets, renders staging + production templates with <code>helm template</code>, and validates with <code>kubeval</code>. No broken manifests can merge.</div>
+      </div>
+      <div class="explain-cell">
+        <div class="explain-cell-title">🔀 Merge → Build (auto)</div>
+        <div class="explain-cell-desc"><code>build-push.yml</code> runs on merge to <code>main</code>. Builds the multi-stage PHP image, pushes to GHCR with the short SHA tag, then commits <code>tag: "sha-abc1234"</code> back into <code>values-staging.yaml</code> — triggering ArgoCD without any manual step.</div>
+      </div>
+      <div class="explain-cell">
+        <div class="explain-cell-title">☸ Staging Sync (auto)</div>
+        <div class="explain-cell-desc">ArgoCD polls the git repo every 3 minutes. When it detects the tag bump, it runs <code>helm upgrade</code> against the staging namespace. Self-heal is on: any manual <code>kubectl</code> change is reverted back to what git says within minutes.</div>
+      </div>
+      <div class="explain-cell">
+        <div class="explain-cell-title">🎯 Promote → Prod (manual PR)</div>
+        <div class="explain-cell-desc">To promote, update <code>values-production.yaml</code> with the verified SHA, open a PR, get a review, and merge. ArgoCD notices the change but does NOT auto-sync production — a deliberate manual <code>argocd app sync linexa-production</code> or UI click is required.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── Footer ────────────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="container footer-inner">
+    <div class="footer-brand"><span style="color:var(--accent)">●</span> linexa</div>
+    <div class="footer-mono">PHP · MySQL · Nginx · Helm · ArgoCD · K8s</div>
+    <a href="overview.html" style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-muted);text-decoration:none">← overview.html</a>
+  </div>
+</footer>
+
+<script>
+const nodes = {
+  dev: {
+    title: '💻 Developer Machine',
+    version: 'Docker Desktop + Make + docker compose v2',
+    desc: 'The starting point for every change. Run `make up` to start the full stack: Nginx (→ :8080), PHP-FPM, and MySQL all come up together. The `./app/src` directory is bind-mounted so code changes are live instantly — no rebuild. Xdebug config is ready in `docker-compose.override.yml`.',
+    facts: ['make up → http://localhost:8080', 'make shell-php → PHP container shell', 'make shell-mysql → MySQL CLI', 'Adminer on :8081 (--profile tools)', 'make build-push TAG=v1.x → push image'],
+    files: ['docker-compose.yml', 'docker-compose.override.yml', 'app/Dockerfile', 'Makefile']
+  },
+  'github-repo': {
+    title: '📁 GitHub Repository',
+    version: 'Git + GitHub — source of truth',
+    desc: 'Everything lives here: application source, Helm chart, ArgoCD config, and Kubernetes manifests. A push to `main` is the only way to trigger a staging deploy. Changes to `helm/**` on any PR trigger the lint workflow. ArgoCD polls this repository every 3 minutes for drift.',
+    facts: ['app/** → triggers build-push.yml', 'helm/** → triggers helm-lint.yml on PRs', 'CI commits image SHA back to values-staging.yaml', 'ArgoCD reads argocd/ for app definitions', 'k8s/ holds namespace + quota manifests'],
+    files: ['helm/control-plane/', 'argocd/', 'k8s/', 'app/src/']
+  },
+  'github-actions': {
+    title: '⚡ GitHub Actions',
+    version: 'GitHub Actions CI — two workflows',
+    desc: '`build-push.yml` runs on merge to main: builds a multi-stage Docker image with layer caching, pushes to GHCR tagged with the short SHA, and commits the new tag back to `values-staging.yaml`. SBOM and provenance attestation are published. `helm-lint.yml` runs on every PR touching helm templates.',
+    facts: ['Multi-stage build (build → runtime, alpine)', 'Layer cache via GitHub Actions cache', 'Tags: sha-<short>, branch, latest, semver', 'SBOM + provenance attestation', 'Bumps values-staging.yaml on merge', 'helm lint + helm template + kubeval on PRs'],
+    files: ['.github/workflows/build-push.yml', '.github/workflows/helm-lint.yml']
+  },
+  ghcr: {
+    title: '📦 Container Registry (GHCR)',
+    version: 'GitHub Container Registry — ghcr.io/linexa/linexa',
+    desc: 'Docker images land here tagged with the git short SHA, the branch name, and `latest` on the default branch. ArgoCD Image Updater on the staging Application polls GHCR for new digests matching the tag pattern and writes the new SHA back to git, closing the auto-deploy loop.',
+    facts: ['Image: ghcr.io/linexa/linexa:sha-<7char>', 'Also tagged: main, latest', 'Polled by ArgoCD Image Updater (staging)', 'Production image pinned by SHA in git', 'SBOM published alongside image'],
+    files: ['app/Dockerfile', '.github/workflows/build-push.yml']
+  },
+  argocd: {
+    title: '🔄 ArgoCD',
+    version: 'ArgoCD v2.12 — GitOps controller',
+    desc: 'The single reconciler for both environments. ArgoCD continuously compares the live Kubernetes state against the desired state in git and applies any diff. The AppProject defines RBAC (developer role: sync only; ci role: update), sync windows (production freeze Fri–Mon), and routes Slack notifications on sync success/failure.',
+    facts: ['Bootstrap: kubectl apply -k argocd/install/', 'Staging: auto-sync + self-heal + prune', 'Production: manual sync only', 'AppProject: RBAC + sync windows', 'Slack notifications via argocd-notifications', 'ApplicationSet: single spec for all envs'],
+    files: ['argocd/install/kustomization.yaml', 'argocd/projects/linexa-project.yaml', 'argocd/apps/linexa-staging.yaml', 'argocd/apps/linexa-production.yaml', 'argocd/applicationset.yaml']
+  },
+  'k8s-staging': {
+    title: '☸ Kubernetes Staging',
+    version: 'Namespace: linexa-staging',
+    desc: 'The staging namespace is the first Kubernetes environment to receive a new build — automatically, within 3 minutes of merge. Runs 1 replica (no HPA). ResourceQuota caps the namespace at 2 CPU and 2 GiB. MySQL storage is 5 Gi. ArgoCD self-heal reverts any manual kubectl changes.',
+    facts: ['1 replica (no autoscaling)', 'auto-sync + self-heal + prune', 'ResourceQuota: 2 CPU / 2 GiB', 'MySQL: 5 Gi standard storage', 'Ingress: staging.linexa.example.com', 'Image Updater: git write-back method'],
+    files: ['helm/control-plane/values-staging.yaml', 'k8s/namespaces/staging.yaml']
+  },
+  'k8s-production': {
+    title: '☸ Kubernetes Production',
+    version: 'Namespace: linexa-production',
+    desc: 'Production is the high-stakes environment. 3–20 replicas managed by HPA (CPU 65% / memory 75%). Pod anti-affinity spreads replicas across nodes. TLS is configured in the Ingress. MySQL runs on a premium SSD StorageClass (50 Gi) with `reclaimPolicy: Retain` — data is never automatically deleted. Manual ArgoCD sync required.',
+    facts: ['3–20 replicas via HPA (v2 API)', 'Manual sync only — no auto-deploy', 'TLS: linexa.example.com via cert-manager', 'ResourceQuota: 8 CPU / 8 GiB', 'MySQL: 50 Gi premium SSD, Retain policy', 'Prod freeze window: Fri 22:00 → Mon 06:00'],
+    files: ['helm/control-plane/values-production.yaml', 'k8s/namespaces/production.yaml', 'k8s/storage/storageclass.yaml']
+  }
+};
+
+const hint = document.getElementById('detail-hint');
+const content = document.getElementById('detail-content');
+let activeNode = null;
+
+document.querySelectorAll('.node').forEach(node => {
+  node.addEventListener('click', () => {
+    const id = node.dataset.id;
+    if (activeNode === node) {
+      // Deselect
+      node.classList.remove('active');
+      hint.style.display = 'flex';
+      content.classList.remove('visible');
+      activeNode = null;
+      return;
+    }
+    document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+    node.classList.add('active');
+    activeNode = node;
+    const d = nodes[id];
+    if (!d) return;
+    document.getElementById('d-title').textContent = d.title;
+    document.getElementById('d-version').textContent = d.version;
+    document.getElementById('d-desc').textContent = d.desc;
+    const facts = document.getElementById('d-facts');
+    facts.innerHTML = '';
+    d.facts.forEach(f => {
+      const li = document.createElement('li');
+      li.textContent = f;
+      facts.appendChild(li);
+    });
+    const files = document.getElementById('d-files');
+    files.innerHTML = '';
+    d.files.forEach(f => {
+      const span = document.createElement('span');
+      span.className = 'detail-file';
+      span.textContent = f;
+      files.appendChild(span);
+    });
+    hint.style.display = 'none';
+    content.classList.add('visible');
+  });
+
+  node.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); node.click(); }
+  });
+});
+</script>
+</body>
+</html>

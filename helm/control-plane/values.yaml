@@ -1,0 +1,33 @@
+replicaCount: 1
+
+image:
+  repository: nginx          # override in values-dev.yaml once image is built
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+# Optional: mount a custom nginx config from outside the image.
+# Leave empty to use the config baked into the Docker image.
+nginx:
+  config: ""
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+service:
+  type: ClusterIP
+  port: 80
+
+cloudArmor:
+  enabled: false
+  policyName: ""
+
+ingress:
+  enabled: false
+  host: linexa.example.com
+  staticIpName: ""
+  managedCert: false

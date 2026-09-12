@@ -1,0 +1,13 @@
+# ── Tenant chart defaults ──────────────────────────────────────────────────────
+tenantId: "unknown"
+
+image:
+  repository: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 80
+
+# ingress.host defaults to dev.tenant-<tenantId>.linexa.eu — override only if needed

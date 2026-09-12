@@ -1,0 +1,5 @@
+apiVersion: v2
+name: tenant
+description: Linexa isolated tenant app — own namespace, own pod, own image
+version: 0.1.0
+appVersion: "0.0.1"
