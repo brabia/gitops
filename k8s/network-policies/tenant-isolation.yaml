@@ -1,12 +1,13 @@
-# Apply once per tenant namespace.
-# Replace the namespace field with the target tenant namespace.
+# Apply to every linexa namespace (control plane + all tenants).
 #
+# kubectl apply -f this file -n linexa-dev
 # kubectl apply -f this file -n linexa-tenant-cfd4486
 # kubectl apply -f this file -n linexa-tenant-3622fab
+# kubectl apply -f this file -n linexa-tenant-3bf9bd5
 #
 # Effect: pods in this namespace accept inbound traffic ONLY from
-# the GCP LB health-checker (kube-system) and from pods within the
-# same namespace. All cross-tenant pod-to-pod traffic is dropped.
+# the GCP LB and from pods within the same namespace.
+# Cross-namespace pod-to-pod traffic (e.g. MySQL) is blocked at ingress.
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
