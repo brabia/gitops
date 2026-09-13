@@ -1,4 +1,4 @@
-﻿# Outputs -- values printed after terraform apply
+# Outputs -- values printed after terraform apply
 # These are read-only; changing them does not affect real resources.
 # Use them to configure kubectl and /etc/hosts after provisioning.
 
@@ -21,13 +21,12 @@ output "zone" {
   value = var.zone
 }
 
-output “get_credentials_command” {
-  description = “Run this after apply to configure kubectl on the bastion”
-  value       = “gcloud container clusters get-credentials ${var.cluster_name} --zone ${var.zone} --project ${var.project_id}”
+output "get_credentials_command" {
+  description = "Run this after apply to configure kubectl on the bastion"
+  value       = "gcloud container clusters get-credentials ${var.cluster_name} --zone ${var.zone} --project ${var.project_id}"
 }
 
-output “dev_lb_ip” {
-  description = “Static IP for the dev LB - add to /etc/hosts for dev.linexa.eu and all tenant subdomains”
+output "dev_lb_ip" {
+  description = "Static IP for the dev LB - add to /etc/hosts for dev.linexa.eu and all tenant subdomains"
   value       = google_compute_global_address.linexa_dev.address
 }
-
