@@ -1,4 +1,4 @@
-# ── Input variables ────────────────────────────────────────────────────────────
+# Input variables
 # All variables have safe defaults for the linexa dev environment.
 # Override them in a terraform.tfvars file (git-ignored) or via -var flags.
 
@@ -35,7 +35,7 @@ variable "node_count" {
 variable "machine_type" {
   description = "GCE machine type for nodes"
   type        = string
-  default     = "e2-small"         # 2 vCPU / 2 GB — sufficient for php-fpm + nginx
+  default     = "e2-medium"         # 2 vCPU / 4 GB - sufficient for php-fpm + nginx
 }
 
 variable "dev_allowed_ips" {

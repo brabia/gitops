@@ -1,5 +1,5 @@
-﻿# ── Outputs — values printed after `terraform apply` ──────────────────────────
-# These are read-only; changing them doesn't affect real resources.
+﻿# Outputs -- values printed after terraform apply
+# These are read-only; changing them does not affect real resources.
 # Use them to configure kubectl and /etc/hosts after provisioning.
 
 output "cluster_name" {
@@ -27,7 +27,7 @@ output “get_credentials_command” {
 }
 
 output “dev_lb_ip” {
-  description = “Static IP for the dev LB — add to /etc/hosts for dev.linexa.eu and all tenant subdomains”
+  description = “Static IP for the dev LB - add to /etc/hosts for dev.linexa.eu and all tenant subdomains”
   value       = google_compute_global_address.linexa_dev.address
 }
 
