@@ -35,6 +35,20 @@ spec:
               value: "linexapass"
           ports:
             - containerPort: 3306
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD 2>/dev/null"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD 2>/dev/null"]
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
           resources:
             requests:
               cpu: 50m
