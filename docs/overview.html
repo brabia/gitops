@@ -2601,7 +2601,7 @@ your pods (dev):
               <div class="card-stripe" style="background:var(--teal)"></div>
               <div class="card-body">
                 <div class="card-name">Separate image</div>
-                <div class="card-desc">Each tenant has its own Dockerfile and its own GHCR image (<span class="mono">linexa-tenant-cfd4486:0.0.1</span>). Pure nginx serving a static page — no PHP, no MySQL needed.</div>
+                <div class="card-desc">Each tenant has its own Dockerfile and its own GAR image (<span class="mono">europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1</span>). Pure nginx serving a static page — no PHP, no MySQL needed.</div>
               </div>
             </div>
             <div class="card">
@@ -2616,17 +2616,19 @@ your pods (dev):
           <!-- step 1: build & push -->
           <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">① Build &amp; push both tenant images</div>
           <div class="code-block">
-<span class="cmt"># Build tenant cfd4486</span>
-<span class="cmd">docker build -t ghcr.io/brabia/linexa-tenant-cfd4486:0.0.1 ./tenants/cfd4486</span>
-<span class="cmd">docker push ghcr.io/brabia/linexa-tenant-cfd4486:0.0.1</span>
+<span class="cmt"># auth once per machine (skip if already done in step 5)</span>
+<span class="cmd">gcloud auth configure-docker europe-west1-docker.pkg.dev</span>
 
-<span class="cmt"># Build tenant 3622fab</span>
-<span class="cmd">docker build -t ghcr.io/brabia/linexa-tenant-3622fab:0.0.1 ./tenants/3622fab</span>
-<span class="cmd">docker push ghcr.io/brabia/linexa-tenant-3622fab:0.0.1</span>
+<span class="cmt"># Build + push tenant cfd4486</span>
+<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1 ./tenants/cfd4486</span>
+<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1</span>
+
+<span class="cmt"># Build + push tenant 3622fab</span>
+<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-3622fab:0.0.1 ./tenants/3622fab</span>
+<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-3622fab:0.0.1</span>
           </div>
-          <div style="background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--text-2);margin-bottom:12px">
-            <span style="color:var(--amber);font-weight:700">⚠ Make the packages public</span> — just like the main app, new GHCR packages are private by default.<br>
-            For each one: github.com/brabia → Packages → <span class="mono">linexa-tenant-cfd4486</span> → Package settings → Change visibility → Public. Repeat for <span class="mono">linexa-tenant-3622fab</span>.
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-bottom:12px">
+            <strong style="color:var(--teal)">No imagePullSecret needed</strong> — GAR is in the same GCP project. The node service account already has <span class="mono" style="font-size:10.5px">roles/artifactregistry.reader</span> via Workload Identity. GKE pulls the image automatically.
           </div>
 
           <!-- step 2: deploy helm -->
