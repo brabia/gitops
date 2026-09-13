@@ -33,6 +33,7 @@ try {
 // ── Cross-tenant isolation test ───────────────────────────────────────────────
 $crossTargets = [
     'linexa-tenant-3622fab' => 'mysql.linexa-tenant-3622fab.svc.cluster.local',
+    'linexa-tenant-3bf9bd5' => 'mysql.linexa-tenant-3bf9bd5.svc.cluster.local',
     'linexa-dev'            => 'mysql.linexa-dev.svc.cluster.local',
 ];
 $crossResults = [];
