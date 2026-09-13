@@ -2718,6 +2718,95 @@ your pods (dev):
           </div>
         </div></div>
 
+        <!-- STEP 9c — add a new tenant -->
+        <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right">
+          <div class="trigger-badge" style="background:var(--lavender-soft);color:var(--lavender)">when onboarding a new tenant</div>
+          <div class="phase-title">9c. Add a new tenant</div>
+          <div class="phase-subtitle">Replace <span class="mono">&lt;ID&gt;</span> with the new tenant identifier (e.g. a short commit SHA or slug). Nine steps total — four on the laptop, four on the bastion, one hosts file update.</div>
+
+          <!-- laptop steps -->
+          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">On your laptop — repo</div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">① Create app files</div>
+          <div class="code-block">
+<span class="cmt"># copy an existing tenant and replace the tenant ID</span>
+<span class="cmd">cp -r app/tenants/cfd4486 app/tenants/&lt;ID&gt;</span>
+<span class="cmt"># edit app/tenants/&lt;ID&gt;/src/index.php — change badge + title to &lt;ID&gt;</span>
+          </div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">② Create namespace manifest + Helm values</div>
+          <div class="code-block">
+<span class="cmt"># namespace + ResourceQuota + LimitRange</span>
+<span class="cmd">cp k8s/namespaces/tenant-cfd4486.yaml k8s/namespaces/tenant-&lt;ID&gt;.yaml</span>
+<span class="cmt"># replace every occurrence of cfd4486 with &lt;ID&gt; inside the file</span>
+
+<span class="cmt"># Helm values</span>
+<span class="cmd">cp helm/tenant-cfd4486.yaml helm/tenant-&lt;ID&gt;.yaml</span>
+<span class="cmt"># replace tenantId and image.repository tenant name with &lt;ID&gt;</span>
+          </div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">③ Add link to control plane</div>
+          <div class="code-block">
+<span class="cmt"># edit app/control-plane/src/index.php — add inside .links div:</span>
+<span class="cmd">&lt;a href="http://dev.tenant-&lt;ID&gt;.linexa.eu"&gt;&amp;rarr; tenant &lt;ID&gt;&lt;/a&gt;</span>
+          </div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">④ Build, push &amp; commit</div>
+          <div class="code-block">
+<span class="cmt"># build + push new tenant image</span>
+<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-&lt;ID&gt;:0.0.1 app/tenants/&lt;ID&gt;</span>
+<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-&lt;ID&gt;:0.0.1</span>
+
+<span class="cmt"># rebuild control plane (new link baked in)</span>
+<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:0.0.1 app/control-plane/</span>
+<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:0.0.1</span>
+
+<span class="cmd">git add .</span>
+<span class="cmd">git commit -m "feat: add tenant &lt;ID&gt;"</span>
+<span class="cmd">git -c http.sslVerify=false push</span>
+          </div>
+
+          <!-- bastion steps -->
+          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">On the bastion</div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑤ Pull + apply namespace + NetworkPolicy</div>
+          <div class="code-block">
+<span class="cmd">cd ~/gitops &amp;&amp; git pull</span>
+<span class="cmd">kubectl apply -f k8s/namespaces/tenant-&lt;ID&gt;.yaml</span>
+<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-&lt;ID&gt;</span>
+          </div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑥ Deploy with Helm</div>
+          <div class="code-block">
+<span class="cmd">helm upgrade --install tenant-&lt;ID&gt; ./helm/tenant \
+  -n linexa-tenant-&lt;ID&gt; \
+  -f ./helm/tenant-&lt;ID&gt;.yaml \
+  --set image.tag=0.0.1</span>
+          </div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑦ Redeploy control plane to pick up the new link</div>
+          <div class="code-block">
+<span class="cmd">helm upgrade linexa-dev ./helm/control-plane \
+  -n linexa-dev \
+  -f helm/control-plane/values.yaml \
+  -f helm/control-plane/values-dev.yaml</span>
+          </div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑧ Get the new tenant LB IP</div>
+          <div class="code-block">
+<span class="cmd">kubectl get ingress -A</span>   <span class="cmt"># note ADDRESS for linexa-tenant-&lt;ID&gt;</span>
+          </div>
+
+          <!-- hosts file -->
+          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">On your laptop — hosts file (Administrator)</div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑨ Add hosts entry</div>
+          <div class="code-block">
+<span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "&lt;LB_IP&gt;  dev.tenant-&lt;ID&gt;.linexa.eu"</span>
+          </div>
+
+        </div></div>
+
         <!-- STEP 10 — delete a tenant -->
         <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right">
           <div class="trigger-badge trigger-manual">when removing a tenant</div>
