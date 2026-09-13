@@ -2631,28 +2631,41 @@ your pods (dev):
             <strong style="color:var(--teal)">No imagePullSecret needed</strong> — GAR is in the same GCP project. The node service account already has <span class="mono" style="font-size:10.5px">roles/artifactregistry.reader</span> via Workload Identity. GKE pulls the image automatically.
           </div>
 
-          <!-- step 2: deploy helm -->
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">② Deploy each tenant into its own namespace</div>
-          <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">The chart creates the namespace, NetworkPolicy, Deployment, Service, and Ingress automatically. <span class="mono">helm uninstall</span> removes all of them including the namespace — no manual cleanup needed.</div>
+          <!-- step 2: create namespace + network policy -->
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">② Create namespace + apply NetworkPolicy</div>
+          <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Same pattern as the control plane — namespace is a standalone manifest in <span class="mono">k8s/namespaces/</span>, applied before Helm. Deletion is also manual (<span class="mono">kubectl delete namespace</span>).</div>
           <div class="code-block">
-<span class="cmt"># Tenant cfd4486 → namespace linexa-tenant-cfd4486 (created by Helm)</span>
+<span class="cmt"># create namespace + ResourceQuota + LimitRange</span>
+<span class="cmd">kubectl apply -f k8s/namespaces/tenant-cfd4486.yaml</span>
+<span class="cmd">kubectl apply -f k8s/namespaces/tenant-3622fab.yaml</span>
+<span class="cmd">kubectl get ns | grep linexa-</span>
+
+<span class="cmt"># apply tenant isolation NetworkPolicy to each namespace</span>
+<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-cfd4486</span>
+<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-3622fab</span>
+          </div>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-top:6px">
+            <strong style="color:var(--teal)">NetworkPolicy enforced</strong> — blocks all cross-namespace pod traffic. Only kube-system (LB health checks) and intra-namespace pods are allowed in. Egress allows DNS + internet (GAR pulls).
+          </div>
+
+          <!-- step 3: deploy helm -->
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">③ Deploy each tenant with Helm</div>
+          <div class="code-block">
+<span class="cmt"># Tenant cfd4486</span>
 <span class="cmd">helm upgrade --install tenant-cfd4486 ./helm/tenant \
-  -n linexa-tenant-cfd4486 --create-namespace \
+  -n linexa-tenant-cfd4486 \
   -f ./helm/tenant-cfd4486.yaml \
   --set image.tag=0.0.1</span>
 
-<span class="cmt"># Tenant 3622fab → namespace linexa-tenant-3622fab (created by Helm)</span>
+<span class="cmt"># Tenant 3622fab</span>
 <span class="cmd">helm upgrade --install tenant-3622fab ./helm/tenant \
-  -n linexa-tenant-3622fab --create-namespace \
+  -n linexa-tenant-3622fab \
   -f ./helm/tenant-3622fab.yaml \
   --set image.tag=0.0.1</span>
           </div>
-          <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-top:6px">
-            <strong style="color:var(--teal)">NetworkPolicy enforced</strong> — each namespace gets a <span class="mono">NetworkPolicy</span> that blocks all cross-namespace pod traffic. Only the GKE LB health check IPs (<span class="mono">130.211.0.0/22</span>, <span class="mono">35.191.0.0/16</span>) and intra-namespace pods are allowed in. Egress allows DNS only.
-          </div>
 
-          <!-- step 3: hosts file -->
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">③ Add tenant subdomains to Windows hosts file (run as Administrator)</div>
+          <!-- step 4: hosts file -->
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">④ Add tenant subdomains to Windows hosts file (run as Administrator)</div>
           <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Get the same Load Balancer IP you used for <span class="mono">dev.linexa.eu</span>:</div>
           <div class="code-block">
 <span class="cmd">kubectl get ingress -A</span>   <span class="cmt"># copy the ADDRESS column value</span>
@@ -2664,8 +2677,8 @@ your pods (dev):
 <span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "&lt;LB_IP&gt;  dev.tenant-3622fab.linexa.eu"</span>
           </div>
 
-          <!-- step 4: verify -->
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">④ Verify — each tenant has its own pod</div>
+          <!-- step 5: verify -->
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">⑤ Verify — each tenant has its own pod</div>
           <div class="code-block">
 <span class="cmd">kubectl get pods -n linexa-tenant-cfd4486</span>   <span class="cmt"># NAME READY STATUS</span>
 <span class="cmd">kubectl get pods -n linexa-tenant-3622fab</span>   <span class="cmt"># tenant-3622fab-xxx 1/1 Running</span>
@@ -2712,10 +2725,11 @@ your pods (dev):
           <div class="phase-subtitle"><strong>What it does:</strong> Removes all Kubernetes resources for a tenant, deletes the values file from the repo, and removes the link from the control plane page. Three steps — cluster, repo, image.</div>
 
           <div class="code-block">
-<span class="cmt"># 1. Bastion — remove Helm release (namespace is in the chart, deleted automatically)</span>
+<span class="cmt"># 1. Bastion — remove Helm release, then delete namespace manually (created outside Helm)</span>
 <span class="cmd">helm uninstall tenant-cfd4486 -n linexa-tenant-cfd4486</span>
-<span class="cmt"># removes: pod, service, ingress, networkpolicy, namespace — everything</span>
-<span class="cmt"># namespace was created outside Helm — delete it separately</span>
+<span class="cmd">kubectl delete -f k8s/namespaces/tenant-cfd4486.yaml</span>
+<span class="cmt"># helm uninstall removes: pod, service, ingress, networkpolicy</span>
+<span class="cmt"># kubectl delete removes: namespace, ResourceQuota, LimitRange</span>
 
 <span class="cmt"># 2. Laptop — remove the values file</span>
 <span class="cmd">git rm helm/tenant-cfd4486.yaml</span>
