@@ -1,0 +1,6 @@
+tenantId: 3bf9bd5
+
+image:
+  repository: europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486
+  tag: latest # replaced by --set image.tag=$TAG at deploy time
+  pullPolicy: IfNotPresent

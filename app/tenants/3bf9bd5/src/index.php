@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Linexa</title>
+  <title>Tenant 3bf9bd5</title>
   <style>
     *,
     *::before,
@@ -35,6 +35,18 @@
       text-align: center;
     }
 
+    .badge {
+      font-family: monospace;
+      font-size: .75rem;
+      color: #a78bfa;
+      background: #1e1b4b;
+      border: 1px solid #6d28d9;
+      border-radius: 6px;
+      padding: .2rem .75rem;
+      display: inline-block;
+      margin-bottom: 1.5rem;
+    }
+
     h1 {
       font-size: 2rem;
       font-weight: 700;
@@ -48,16 +60,15 @@
       margin-bottom: 1.5rem;
     }
 
-    .links {
-      display: flex;
-      flex-direction: column;
-      gap: .5rem;
+    p {
+      color: #94a3b8;
+      margin-bottom: 1.5rem;
     }
 
     a {
       color: #60a5fa;
       text-decoration: none;
-      font-size: .9rem;
+      font-size: .875rem;
     }
 
     a:hover {
@@ -68,13 +79,11 @@
 
 <body>
   <div class="card">
-    <h1>Linexa</h1>
+    <div class="badge">tenant: 3bf9bd5</div>
+    <h1>Hello World</h1>
     <p class="date"><?= $now->format('Y-m-d H:i:s') ?> UTC</p>
-    <div class="links">
-      <a href="http://dev.tenant-cfd4486.linexa.eu">&rarr; tenant cfd4486</a>
-      <a href="http://dev.tenant-3622fab.linexa.eu">&rarr; tenant 3622fab</a>
-      <a href="http://dev.tenant-3bf9bd5.linexa.eu">&rarr; tenant 3bf9bd5<ID></a>
-    </div>
+    <p>Isolated namespace &middot; own pod &middot; php-fpm + nginx</p>
+    <a href="http://dev.linexa.eu">&larr; back to control plane</a>
   </div>
 </body>
 
