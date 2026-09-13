@@ -33,23 +33,15 @@ spec:
         - protocol: TCP
           port: 80
   egress:
-    # allow egress to pods in the same namespace (own MySQL, etc.)
-    - to:
-        - podSelector: {}
-    # allow DNS — port-only (no 'to') so it matches the kube-dns ClusterIP
-    # (10.52.0.10) which falls inside 10.0.0.0/8 and cannot be matched by
-    # namespaceSelector when GKE evaluates NetworkPolicy before DNAT.
+    # allow DNS — port-only so it matches kube-dns ClusterIP (10.52.0.10)
     - ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
           port: 53
-    # allow outbound to the internet (GAR pulls, external APIs)
-    # RFC1918 ranges are excluded to block cross-tenant pod-to-pod traffic
+    # allow all outbound (internet + cluster Services including own MySQL)
+    # cross-tenant isolation is enforced by the ingress podSelector rule:
+    # MySQL in each namespace only accepts connections from same-namespace pods
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
