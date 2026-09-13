@@ -1441,8 +1441,176 @@ svg.ov-pipeline{display:block;width:100%;min-width:620px}
             <tr><td class="mono" style="font-size:11px;color:var(--text-3)">nat.tf</td><td class="mono" style="color:var(--teal)">google_compute_router_nat</td><td style="font-size:11.5px;color:var(--text-2)">Private nodes pull images via Cloud NAT</td></tr>
             <tr><td class="mono" style="font-size:11px;color:var(--text-3)">bastion.tf</td><td class="mono" style="color:var(--ruby)">google_compute_instance</td><td style="font-size:11.5px;color:var(--text-2)">linexa-bastion · e2-micro · no public IP · IAP tunnel only</td></tr>
             <tr><td class="mono" style="font-size:11px;color:var(--text-3)">gke.tf</td><td class="mono" style="color:var(--accent-mid)">google_container_cluster</td><td style="font-size:11.5px;color:var(--text-2)">linexa · fully private · Workload Identity · VPC-native</td></tr>
-            <tr><td class="mono" style="font-size:11px;color:var(--text-3)">gke.tf</td><td class="mono" style="color:var(--accent-mid)">google_container_node_pool</td><td style="font-size:11.5px;color:var(--text-2)">1 × e2-standard-2 · SSD · COS · auto-repair</td></tr>
+            <tr><td class="mono" style="font-size:11px;color:var(--text-3)">gke.tf</td><td class="mono" style="color:var(--accent-mid)">google_container_node_pool</td><td style="font-size:11.5px;color:var(--text-2)">1 × e2-small · SSD · COS · auto-repair</td></tr>
           </tbody></table></div>
+
+          <!-- RESOURCE FLOW MAP -->
+          <div style="margin:0 0 14px;overflow-x:auto">
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block" role="img" aria-label="GCP resources and workflow — deploy and inbound traffic">
+  <title>GCP resource map and workflow</title>
+  <defs>
+    <style>
+      .fw-t{font-family:ui-monospace,'Cascadia Code','Fira Mono',monospace;fill:var(--text-1,#1e293b)}
+      .fw-d{font-family:ui-monospace,'Cascadia Code','Fira Mono',monospace;fill:var(--text-3,#64748b)}
+      .fw-lap{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}
+      .fw-br{fill:#faf5ff;stroke:#c4b5fd;stroke-width:1.5}
+      .fw-gcp{fill:none;stroke:#4338ca;stroke-width:2;stroke-dasharray:6 3}
+      .fw-gar{fill:#dcfce7;stroke:#86efac;stroke-width:1.5}
+      .fw-bas{fill:#fff1f2;stroke:#fda4af;stroke-width:1.5}
+      .fw-gke{fill:#dbeafe;stroke:#93c5fd;stroke-width:1.5}
+      .fw-nat{fill:#d1fae5;stroke:#6ee7b7;stroke-width:1.5}
+      .fw-arm{fill:#fff7ed;stroke:#fdba74;stroke-width:1.5}
+      .fw-lb{fill:#fefce8;stroke:#fde047;stroke-width:1.5}
+      .fw-tf{fill:#ede9fe;stroke:#a78bfa;stroke-width:1.5}
+      .fw-sep{stroke:#a78bfa;stroke-width:.7;stroke-dasharray:4 3;fill:none}
+      .fw-a{stroke:#94a3b8;stroke-width:1.5;fill:none;marker-end:url(#fwa)}
+      .fw-i{stroke:#22c9a0;stroke-width:1.5;fill:none;stroke-dasharray:6 3;marker-end:url(#fwi)}
+      .fw-p{stroke:#f97316;stroke-width:1.3;fill:none;stroke-dasharray:4 2;marker-end:url(#fwp)}
+      @media(prefers-color-scheme:dark){
+        .fw-t{fill:#e2e8f0}.fw-d{fill:#475569}
+        .fw-lap{fill:#1e293b;stroke:#475569}
+        .fw-br{fill:#2e1065;stroke:#7c3aed}
+        .fw-gcp{stroke:#818cf8}
+        .fw-gar{fill:#052e16;stroke:#4ade80}
+        .fw-bas{fill:#1a0010;stroke:#e11d48}
+        .fw-gke{fill:#1e3a5f;stroke:#3b82f6}
+        .fw-nat{fill:#022c22;stroke:#34d399}
+        .fw-arm{fill:#1c0a00;stroke:#f97316}
+        .fw-lb{fill:#1c1400;stroke:#ca8a04}
+        .fw-tf{fill:#1e1b4b;stroke:#6366f1}
+        .fw-sep{stroke:#6366f1}
+      }
+    </style>
+    <marker id="fwa" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7Z" fill="#94a3b8"/></marker>
+    <marker id="fwi" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7Z" fill="#22c9a0"/></marker>
+    <marker id="fwp" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7Z" fill="#f97316"/></marker>
+  </defs>
+
+  <!-- ══════════ GCP BOUNDARY BOX — everything inside is a GCP resource ══════ -->
+  <rect x="110" y="8" width="604" height="404" rx="10" class="fw-gcp"/>
+  <text x="125" y="24" font-size="9" font-weight="700" letter-spacing=".08em" fill="#4338ca">☁ GCP · replenit-lab · europe-west1-b</text>
+
+  <!-- ══════════ OUTSIDE GCP — Laptop (deploy actor) ══════════════════════════ -->
+  <rect x="8" y="35" width="96" height="288" rx="6" class="fw-lap"/>
+  <text x="56" y="162" font-size="22" text-anchor="middle">💻</text>
+  <text x="56" y="186" font-size="10" font-weight="700" text-anchor="middle" class="fw-t">Your Laptop</text>
+  <text x="56" y="204" font-size="7.5" text-anchor="middle" class="fw-d">terraform · docker</text>
+  <text x="56" y="216" font-size="7.5" text-anchor="middle" class="fw-d">gcloud · helm</text>
+
+  <!-- ══════════ INSIDE GCP — DEPLOY SECTION ═════════════════════════════════ -->
+  <text x="125" y="42" font-size="7" font-weight="700" letter-spacing=".12em" class="fw-d">DEPLOY WORKFLOW — run once per change</text>
+
+  <!-- ① terraform apply — full-width bar at the top of the GCP box -->
+  <rect x="122" y="48" width="582" height="40" rx="5" class="fw-tf"/>
+  <text x="413" y="64" font-size="10" font-weight="700" text-anchor="middle" fill="#4338ca">terraform apply</text>
+  <text x="413" y="79" font-size="7.5" text-anchor="middle" class="fw-d">provisions: VPC · subnet · Cloud NAT · bastion VM · GKE cluster + node pool · static IP · Cloud Armor policy</text>
+
+  <!-- ② GAR — Artifact Registry (docker push target) -->
+  <rect x="122" y="104" width="172" height="56" rx="5" class="fw-gar"/>
+  <text x="208" y="124" font-size="10" font-weight="700" text-anchor="middle" fill="#15803d">Artifact Registry</text>
+  <text x="208" y="138" font-size="8" text-anchor="middle" class="fw-d">europe-west1-docker.pkg.dev</text>
+  <text x="208" y="152" font-size="7.5" text-anchor="middle" fill="#15803d">docker build + push here</text>
+
+  <!-- ③ linexa-bastion — IAP SSH jump host, no public IP -->
+  <rect x="122" y="176" width="172" height="56" rx="5" class="fw-bas"/>
+  <text x="208" y="196" font-size="10" font-weight="700" text-anchor="middle" fill="#be123c">linexa-bastion</text>
+  <text x="208" y="210" font-size="8" text-anchor="middle" class="fw-d">IAP SSH · e2-micro</text>
+  <text x="208" y="224" font-size="7.5" text-anchor="middle" fill="#be123c">no public IP</text>
+
+  <!-- Cloud NAT — lets private GKE nodes reach the internet for image pulls -->
+  <rect x="122" y="248" width="172" height="36" rx="4" class="fw-nat"/>
+  <text x="208" y="263" font-size="9" font-weight="700" text-anchor="middle" fill="#065f46">Cloud NAT</text>
+  <text x="208" y="277" font-size="7.5" text-anchor="middle" class="fw-d">private nodes → internet</text>
+
+  <!-- GKE cluster — private master endpoint, Calico NetworkPolicy, Workload Identity -->
+  <rect x="305" y="104" width="399" height="180" rx="8" class="fw-gke"/>
+  <text x="318" y="120" font-size="9" font-weight="700" fill="#1d4ed8" letter-spacing=".04em">GKE CLUSTER · linexa · 1× e2-small node</text>
+  <text x="318" y="133" font-size="7.5" class="fw-d">private master endpoint · Calico NetworkPolicy · Workload Identity</text>
+  <!-- Namespace boxes inside GKE -->
+  <rect x="318" y="142" width="120" height="48" rx="4" fill="#93c5fd" fill-opacity=".25" stroke="#3b82f6" stroke-width="1"/>
+  <text x="378" y="161" font-size="8.5" font-weight="700" text-anchor="middle" fill="#1d4ed8">linexa-dev ns</text>
+  <text x="378" y="174" font-size="7" text-anchor="middle" class="fw-d">control plane pod</text>
+  <text x="378" y="184" font-size="7" text-anchor="middle" class="fw-d">php-fpm · nginx</text>
+
+  <rect x="450" y="142" width="118" height="48" rx="4" fill="#93c5fd" fill-opacity=".25" stroke="#3b82f6" stroke-width="1"/>
+  <text x="509" y="161" font-size="8.5" font-weight="700" text-anchor="middle" fill="#1d4ed8">ns: cfd4486</text>
+  <text x="509" y="174" font-size="7" text-anchor="middle" class="fw-d">tenant pod</text>
+  <text x="509" y="184" font-size="7" text-anchor="middle" fill="#1d4ed8">NetworkPolicy ✓</text>
+
+  <rect x="580" y="142" width="115" height="48" rx="4" fill="#93c5fd" fill-opacity=".25" stroke="#3b82f6" stroke-width="1"/>
+  <text x="637" y="161" font-size="8.5" font-weight="700" text-anchor="middle" fill="#1d4ed8">ns: 3622fab</text>
+  <text x="637" y="174" font-size="7" text-anchor="middle" class="fw-d">tenant pod</text>
+  <text x="637" y="184" font-size="7" text-anchor="middle" fill="#1d4ed8">NetworkPolicy ✓</text>
+
+  <!-- GKE node details -->
+  <text x="504" y="214" font-size="7.5" text-anchor="middle" class="fw-d">NEGs auto-created by Ingress (class: gce) · images pulled via Cloud NAT</text>
+  <text x="504" y="228" font-size="7.5" text-anchor="middle" class="fw-d">master endpoint: 172.16.0.0/28 (VPC-only) · helm runs from bastion</text>
+  <text x="504" y="242" font-size="7.5" text-anchor="middle" class="fw-d">COS_CONTAINERD · Shielded Nodes · Workload Identity enabled</text>
+  <text x="504" y="272" font-size="7.5" text-anchor="middle" class="fw-d">Calico enforces tenant-isolation NetworkPolicy per namespace</text>
+
+  <!-- Arrows from Laptop into GCP: ① terraform, ② docker push, ③ IAP SSH -->
+  <line x1="104" y1="68" x2="122" y2="68" class="fw-a"/>
+  <text x="89" y="63" font-size="9" font-weight="800" fill="#7c3aed">①</text>
+
+  <line x1="104" y1="132" x2="122" y2="132" class="fw-a"/>
+  <text x="89" y="127" font-size="9" font-weight="800" fill="#7c3aed">②</text>
+
+  <line x1="104" y1="204" x2="122" y2="204" class="fw-i"/>
+  <text x="89" y="199" font-size="9" font-weight="800" fill="#7c3aed">③</text>
+
+  <!-- ④ bastion → GKE helm upgrade (inside GCP) -->
+  <line x1="294" y1="204" x2="305" y2="204" class="fw-a"/>
+  <text x="294" y="199" font-size="8.5" font-weight="800" fill="#7c3aed">④</text>
+  <text x="296" y="216" font-size="7" class="fw-d">helm</text>
+
+  <!-- ⑤ GKE node → GAR: image pull via Cloud NAT (arc above the terraform bar) -->
+  <path d="M 504 104 C 504 36, 340 33, 294 104" stroke="#f97316" stroke-width="1.3" fill="none" stroke-dasharray="4 2" marker-end="url(#fwp)"/>
+  <text x="400" y="30" font-size="7.5" fill="#f97316" text-anchor="middle">⑤ node pulls image → GAR via Cloud NAT</text>
+
+  <!-- ══════════ SEPARATOR between deploy and traffic sections ════════════════ -->
+  <line x1="122" y1="296" x2="700" y2="296" class="fw-sep"/>
+  <text x="125" y="310" font-size="7" font-weight="700" letter-spacing=".12em" class="fw-d">INBOUND TRAFFIC — every request</text>
+
+  <!-- ══════════ OUTSIDE GCP — Browser ═══════════════════════════════════════ -->
+  <rect x="8" y="315" width="96" height="52" rx="6" class="fw-br"/>
+  <text x="56" y="339" font-size="18" text-anchor="middle">🌐</text>
+  <text x="56" y="357" font-size="9" font-weight="700" text-anchor="middle" class="fw-t">Browser</text>
+
+  <!-- Browser → Cloud Armor (arrow crosses the GCP boundary) -->
+  <line x1="104" y1="341" x2="122" y2="341" class="fw-a"/>
+
+  <!-- ══════════ INSIDE GCP — Traffic chain ══════════════════════════════════ -->
+  <!-- Cloud Armor — IP allowlist, 403 if not in var.dev_allowed_ips -->
+  <rect x="122" y="315" width="145" height="54" rx="5" class="fw-arm"/>
+  <text x="194" y="335" font-size="9.5" font-weight="700" text-anchor="middle" fill="#c2410c">Cloud Armor</text>
+  <text x="194" y="348" font-size="8" text-anchor="middle" class="fw-d">IP allowlist · 403 if denied</text>
+  <text x="194" y="360" font-size="7" text-anchor="middle" class="fw-d">var.dev_allowed_ips</text>
+
+  <line x1="267" y1="342" x2="283" y2="342" class="fw-a"/>
+
+  <!-- HTTP(S) LB — GKE Ingress class:gce, linexa-dev-ip static IP, hostname routing -->
+  <rect x="283" y="315" width="160" height="54" rx="5" class="fw-lb"/>
+  <text x="363" y="335" font-size="9.5" font-weight="700" text-anchor="middle" fill="#92400e">HTTP(S) LB</text>
+  <text x="363" y="348" font-size="8" text-anchor="middle" class="fw-d">linexa-dev-ip (static)</text>
+  <text x="363" y="360" font-size="7.5" text-anchor="middle" class="fw-d">hostname routing → Ingress</text>
+
+  <line x1="443" y1="342" x2="459" y2="342" class="fw-a"/>
+
+  <!-- GKE pods — reached via Network Endpoint Groups -->
+  <rect x="459" y="315" width="243" height="54" rx="5" class="fw-gke"/>
+  <text x="580" y="335" font-size="9.5" font-weight="700" text-anchor="middle" fill="#1d4ed8">GKE pods (via NEG)</text>
+  <text x="580" y="348" font-size="8" text-anchor="middle" class="fw-d">linexa-dev · cfd4486 · 3622fab</text>
+  <text x="580" y="360" font-size="7" text-anchor="middle" class="fw-d">Network Endpoint Groups</text>
+
+  <!-- ══════════ LEGEND ═══════════════════════════════════════════════════════ -->
+  <line x1="122" y1="390" x2="148" y2="390" class="fw-i"/>
+  <text x="154" y="394" font-size="7.5" class="fw-d">IAP tunnel (identity-gated)</text>
+  <line x1="300" y1="390" x2="326" y2="390" class="fw-p"/>
+  <text x="332" y="394" font-size="7.5" class="fw-d">image pull via Cloud NAT</text>
+  <line x1="476" y1="390" x2="502" y2="390" class="fw-a"/>
+  <text x="508" y="394" font-size="7.5" class="fw-d">direct call / request</text>
+</svg>
+          </div>
 
           <!-- NODE COUNT EXPLAINER -->
           <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:12px 14px;margin-bottom:14px">

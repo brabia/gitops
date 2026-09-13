@@ -1,3 +1,7 @@
+# ── Input variables ────────────────────────────────────────────────────────────
+# All variables have safe defaults for the linexa dev environment.
+# Override them in a terraform.tfvars file (git-ignored) or via -var flags.
+
 variable "project_id" {
   description = "GCP project ID"
   type        = string
@@ -31,7 +35,7 @@ variable "node_count" {
 variable "machine_type" {
   description = "GCE machine type for nodes"
   type        = string
-  default     = "e2-standard-2"   # 2 vCPU / 8 GB — enough for ArgoCD + app
+  default     = "e2-small"         # 2 vCPU / 2 GB — sufficient for php-fpm + nginx
 }
 
 variable "dev_allowed_ips" {

@@ -1,6 +1,10 @@
 # ── Static global IP for the GCP HTTP(S) Load Balancer ────────────────────────
-# Reserving a static IP prevents the LB address from changing when the Ingress
-# is deleted and recreated (e.g. during a helm uninstall / reinstall).
+# Step: reserve a stable external IP for the Ingress LB.
+# GKE Ingress (class: gce) creates an HTTP(S) LB automatically; by pre-reserving
+# this named IP we keep the same address across helm uninstall / reinstall cycles.
+# The actual LB and forwarding rules are created by GKE when the Ingress resource
+# is applied — Terraform only reserves the IP here.
+#
 # Reference this name in helm values: ingress.staticIpName = "linexa-dev-ip"
 
 resource "google_compute_global_address" "linexa_dev" {
