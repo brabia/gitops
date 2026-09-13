@@ -35,7 +35,7 @@ variable "node_count" {
 variable "machine_type" {
   description = "GCE machine type for nodes"
   type        = string
-  default     = "e2-medium"         # 2 vCPU / 4 GB - sufficient for php-fpm + nginx
+  default     = "e2-standard-4"     # 4 vCPU / 16 GB - headroom for GMP + control plane + multiple tenant pods
 }
 
 variable "dev_allowed_ips" {
