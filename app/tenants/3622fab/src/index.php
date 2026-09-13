@@ -10,7 +10,7 @@ $ownQuery = 'SELECT id, name, email, created_at FROM users ORDER BY id';
 
 try {
     $db = new PDO(
-        'mysql:host=mysql;port=3306;dbname=linexa;connect_timeout=3',
+        'mysql:host=mysql;port=3306;dbname=linexa;connect_timeout=10',
         'linexa', 'linexapass',
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]
     );
