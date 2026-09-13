@@ -2678,6 +2678,26 @@ your pods (dev):
           </div>
         </div></div>
 
+        <!-- STEP 9b — update a tenant (nginx / app code) -->
+        <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right">
+          <div class="trigger-badge" style="background:var(--lavender-soft);color:var(--lavender)">when you change nginx or app code</div>
+          <div class="phase-title">9b. Update a tenant image</div>
+          <div class="phase-subtitle">The nginx config and PHP source are baked into the Docker image at build time. Any change to <span class="mono">nginx/default.conf</span> or <span class="mono">src/</span> requires a rebuild, a new push to GAR, and a rollout restart so the pod pulls the new image.</div>
+
+          <div class="code-block">
+<span class="cmt"># 1. Laptop — rebuild + push (bump tag if you want to keep history)</span>
+<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1 app/tenants/cfd4486</span>
+<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1</span>
+
+<span class="cmt"># 2. Bastion — rollout restart forces pods to pull the new image</span>
+<span class="cmd">kubectl rollout restart deployment/tenant-cfd4486 -n linexa-tenant-cfd4486</span>
+<span class="cmd">kubectl rollout status  deployment/tenant-cfd4486 -n linexa-tenant-cfd4486</span>   <span class="cmt"># wait for rollout</span>
+          </div>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2)">
+            <strong style="color:var(--amber)">imagePullPolicy: IfNotPresent</strong> — if you reuse the same tag (<span class="mono">0.0.1</span>), the node won't pull the new image unless you restart the pod. Either bump the tag or always run <span class="mono">kubectl rollout restart</span> after pushing.
+          </div>
+        </div></div>
+
         <!-- STEP 10 — delete a tenant -->
         <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right">
           <div class="trigger-badge trigger-manual">when removing a tenant</div>
