@@ -33,6 +33,7 @@ try {
 $crossTargets = [
     'linexa-tenant-cfd4486' => 'mysql.linexa-tenant-cfd4486.svc.cluster.local',
     'linexa-tenant-3622fab' => 'mysql.linexa-tenant-3622fab.svc.cluster.local',
+    'linexa-tenant-3bf9bd5' => 'mysql.linexa-tenant-3bf9bd5.svc.cluster.local',
 ];
 $crossResults = [];
 foreach ($crossTargets as $ns => $host) {
@@ -53,6 +54,7 @@ foreach ($crossTargets as $ns => $host) {
 $tenants = [
     'cfd4486' => 'http://dev.tenant-cfd4486.linexa.eu',
     '3622fab' => 'http://dev.tenant-3622fab.linexa.eu',
+    '3bf9bd5' => 'http://dev.tenant-3bf9bd5.linexa.eu',
 ];
 ?>
 <!DOCTYPE html>
