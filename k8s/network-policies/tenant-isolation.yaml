@@ -33,6 +33,9 @@ spec:
         - protocol: TCP
           port: 80
   egress:
+    # allow egress to pods in the same namespace (own MySQL, etc.)
+    - to:
+        - podSelector: {}
     # allow DNS — port-only (no 'to') so it matches the kube-dns ClusterIP
     # (10.52.0.10) which falls inside 10.0.0.0/8 and cannot be matched by
     # namespaceSelector when GKE evaluates NetworkPolicy before DNAT.
