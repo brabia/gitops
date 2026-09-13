@@ -2633,18 +2633,22 @@ your pods (dev):
 
           <!-- step 2: deploy helm -->
           <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">② Deploy each tenant into its own namespace</div>
+          <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">The chart creates the namespace, NetworkPolicy, Deployment, Service, and Ingress automatically. <span class="mono">helm uninstall</span> removes all of them including the namespace — no manual cleanup needed.</div>
           <div class="code-block">
-<span class="cmt"># Tenant cfd4486 → namespace linexa-tenant-cfd4486</span>
+<span class="cmt"># Tenant cfd4486 → namespace linexa-tenant-cfd4486 (created by Helm)</span>
 <span class="cmd">helm upgrade --install tenant-cfd4486 ./helm/tenant \
   -n linexa-tenant-cfd4486 --create-namespace \
   -f ./helm/tenant-cfd4486.yaml \
   --set image.tag=0.0.1</span>
 
-<span class="cmt"># Tenant 3622fab → namespace linexa-tenant-3622fab</span>
+<span class="cmt"># Tenant 3622fab → namespace linexa-tenant-3622fab (created by Helm)</span>
 <span class="cmd">helm upgrade --install tenant-3622fab ./helm/tenant \
   -n linexa-tenant-3622fab --create-namespace \
   -f ./helm/tenant-3622fab.yaml \
   --set image.tag=0.0.1</span>
+          </div>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-top:6px">
+            <strong style="color:var(--teal)">NetworkPolicy enforced</strong> — each namespace gets a <span class="mono">NetworkPolicy</span> that blocks all cross-namespace pod traffic. Only the GKE LB health check IPs (<span class="mono">130.211.0.0/22</span>, <span class="mono">35.191.0.0/16</span>) and intra-namespace pods are allowed in. Egress allows DNS only.
           </div>
 
           <!-- step 3: hosts file -->
@@ -2692,6 +2696,9 @@ your pods (dev):
 <span class="cmt"># 2. Bastion — rollout restart forces pods to pull the new image</span>
 <span class="cmd">kubectl rollout restart deployment/tenant-cfd4486 -n linexa-tenant-cfd4486</span>
 <span class="cmd">kubectl rollout status  deployment/tenant-cfd4486 -n linexa-tenant-cfd4486</span>   <span class="cmt"># wait for rollout</span>
+
+<span class="cmt"># check all linexa pods at once</span>
+<span class="cmd">kubectl get pods -A | grep linexa-</span>
           </div>
           <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2)">
             <strong style="color:var(--amber)">imagePullPolicy: IfNotPresent</strong> — if you reuse the same tag (<span class="mono">0.0.1</span>), the node won't pull the new image unless you restart the pod. Either bump the tag or always run <span class="mono">kubectl rollout restart</span> after pushing.
@@ -2705,10 +2712,9 @@ your pods (dev):
           <div class="phase-subtitle"><strong>What it does:</strong> Removes all Kubernetes resources for a tenant, deletes the values file from the repo, and removes the link from the control plane page. Three steps — cluster, repo, image.</div>
 
           <div class="code-block">
-<span class="cmt"># 1. Bastion — remove Helm release + namespace</span>
+<span class="cmt"># 1. Bastion — remove Helm release (namespace is in the chart, deleted automatically)</span>
 <span class="cmd">helm uninstall tenant-cfd4486 -n linexa-tenant-cfd4486</span>
-<span class="cmd">kubectl delete namespace linexa-tenant-cfd4486</span>
-<span class="cmt"># helm uninstall removes pod/service/ingress/configmap</span>
+<span class="cmt"># removes: pod, service, ingress, networkpolicy, namespace — everything</span>
 <span class="cmt"># namespace was created outside Helm — delete it separately</span>
 
 <span class="cmt"># 2. Laptop — remove the values file</span>

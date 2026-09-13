@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-isolation
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector: {}   # applies to all pods in this namespace
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # allow traffic from pods within the same namespace (health probes, etc.)
+    - from:
+        - podSelector: {}
+    # allow GKE LB health checks and forwarded traffic (Google Frontend IPs)
+    - from:
+        - ipBlock:
+            cidr: 130.211.0.0/22
+        - ipBlock:
+            cidr: 35.191.0.0/16
+      ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    # allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # allow pods within same namespace to talk to each other
+    - to:
+        - podSelector: {}

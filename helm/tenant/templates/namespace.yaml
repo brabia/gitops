@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    linexa/tenant: {{ .Values.tenantId | quote }}
+    # label used by NetworkPolicy to identify this tenant namespace
