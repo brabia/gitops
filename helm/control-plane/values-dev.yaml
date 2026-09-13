@@ -1,8 +1,8 @@
 # ── Dev overrides ─────────────────────────────────────────────────────────────
 
 image:
-  repository: nginx          # TODO: replace with your built image, e.g. europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane
-  tag: alpine
+  repository: europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane
+  tag: 0.0.1                 # bump this every time you docker push a new build
 
 service:
   type: NodePort             # GKE GCE Ingress requires NodePort

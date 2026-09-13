@@ -1708,29 +1708,108 @@ your pods (dev):
 
           <!-- WHAT EXISTS NOW -->
           <div style="margin-top:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px">✅ What exists in GCP right now — after terraform apply</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;font-family:var(--mono)">GCP layer</div>
-                <div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--text-2)">
-                  <div>🌐 <strong style="color:var(--text-1)">linexa-vpc</strong> — isolated VPC + subnet</div>
-                  <div>🔄 <strong style="color:var(--text-1)">Cloud NAT</strong> — private nodes can pull images</div>
-                  <div>🛡 <strong style="color:var(--text-1)">linexa-bastion</strong> — IAP-only VM (e2-micro)</div>
-                  <div>☸ <strong style="color:var(--text-1)">linexa</strong> — GKE cluster, 1 node, fully private</div>
-                </div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px">What exists in GCP right now — after <span style="font-family:var(--mono)">terraform apply</span></div>
+
+            <!-- Row helper styles inlined per-row -->
+            <!-- Networking -->
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:0 0 5px">Networking</div>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-vpc</strong> <span style="color:var(--text-3)">+ linexa-subnet · 10.0.0.0/20 · pods 10.48.0.0/14 · svc 10.52.0.0/20</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
               </div>
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;font-family:var(--mono)">Kubernetes layer</div>
-                <div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--text-2)">
-                  <div>☸ <strong style="color:var(--text-1)">kube-system</strong> — CoreDNS, kube-proxy, metrics-server</div>
-                  <div>☸ <strong style="color:var(--text-1)">default</strong> — empty, avoid using</div>
-                  <div style="color:var(--text-3);font-style:italic">no app namespaces yet</div>
-                  <div style="color:var(--text-3);font-style:italic">no app pods yet</div>
-                </div>
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-router</strong> <span style="color:var(--text-3)">Cloud Router — attachment point for NAT</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
+              </div>
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-nat</strong> <span style="color:var(--text-3)">Cloud NAT · AUTO_ONLY · private nodes reach internet for image pulls</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
               </div>
             </div>
-            <div style="padding:8px 12px;background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r);font-size:11.5px;color:var(--text-2)">
-              <strong style="color:var(--amber)">No app deployed yet.</strong> The cluster is running but empty. Steps 4–6 create the namespace, build the image, and deploy the app for the first time.
+
+            <!-- GKE -->
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:0 0 5px">GKE</div>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa</strong> <span style="color:var(--text-3)">GKE cluster · private endpoint 172.16.0.0/28 · Calico · Workload Identity</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
+              </div>
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-nodes</strong> <span style="color:var(--text-3)">node pool · 1× e2-small · COS_CONTAINERD · Shielded · auto-repair</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
+              </div>
+            </div>
+
+            <!-- Bastion -->
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:0 0 5px">Bastion (IAP jump host)</div>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-bastion</strong> <span style="color:var(--text-3)">e2-micro VM · no public IP · OS Login · roles/container.developer</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
+              </div>
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-allow-iap-ssh</strong> <span style="color:var(--text-3)">firewall · src 35.235.240.0/20 (IAP only) → tag:bastion tcp/22</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
+              </div>
+            </div>
+
+            <!-- LB -->
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:0 0 5px">Load balancer</div>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-dev-ip</strong> <span style="color:var(--text-3)">static global IP reserved — 136.110.207.170</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--emerald-soft);color:var(--emerald);padding:2px 7px;border-radius:4px;white-space:nowrap">✓ tf</span>
+              </div>
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px;opacity:.65">
+                <span style="width:7px;height:7px;border-radius:50%;background:var(--border);display:inline-block"></span>
+                <span><strong style="color:var(--text-2);font-family:var(--mono);font-size:11px">HTTP(S) LB + NEGs</strong> <span style="color:var(--text-3)">forwarding rules, url-map, backend services — auto-created by GKE Ingress</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--accent-soft);color:var(--accent-mid);padding:2px 7px;border-radius:4px;white-space:nowrap">via Ingress</span>
+              </div>
+            </div>
+
+            <!-- Security — warning row -->
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin:0 0 5px">Security — action needed</div>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--amber-soft);border:1px solid var(--amber);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">linexa-dev-allowlist</strong> <span style="color:var(--text-2)">Cloud Armor IP allowlist — <strong style="color:var(--amber)">missing or not attached to the backend</strong></span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--amber-soft);color:var(--amber);padding:2px 7px;border-radius:4px;border:1px solid var(--amber);white-space:nowrap">⚠ check</span>
+              </div>
+            </div>
+            <div style="padding:9px 12px;background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r);font-size:11.5px;color:var(--text-2);line-height:1.6;margin-bottom:10px">
+              <strong style="color:var(--amber)">Without Cloud Armor</strong> the HTTP(S) LB accepts traffic from any IP — your dev app is publicly reachable. Fix:<br>
+              <span style="font-family:var(--mono);font-size:11px">1.</span> Check: <span style="font-family:var(--mono);font-size:11px">gcloud compute security-policies list --project replenit-lab</span><br>
+              <span style="font-family:var(--mono);font-size:11px">2.</span> Re-apply if missing: <span style="font-family:var(--mono);font-size:11px">terraform apply -target=google_compute_security_policy.dev_allowlist</span><br>
+              <span style="font-family:var(--mono);font-size:11px">3.</span> Verify the Helm <span style="font-family:var(--mono);font-size:11px">BackendConfig</span> references <span style="font-family:var(--mono);font-size:11px">linexa-dev-allowlist</span>.
+            </div>
+
+            <!-- Workloads (helm) -->
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:0 0 5px">Workloads — helm-managed (deployed after terraform)</div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">ns: linexa-dev</strong> <span style="color:var(--text-3)">control-plane pod · Ingress · Service (NodePort)</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--accent-soft);color:var(--accent-mid);padding:2px 7px;border-radius:4px;white-space:nowrap">helm</span>
+              </div>
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">ns: linexa-tenant-cfd4486</strong> <span style="color:var(--text-3)">tenant pod · Ingress · NetworkPolicy</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--accent-soft);color:var(--accent-mid);padding:2px 7px;border-radius:4px;white-space:nowrap">helm</span>
+              </div>
+              <div style="display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#1baf7a;display:inline-block"></span>
+                <span><strong style="color:var(--text-1);font-family:var(--mono);font-size:11px">ns: linexa-tenant-3622fab</strong> <span style="color:var(--text-3)">tenant pod · Ingress · NetworkPolicy</span></span>
+                <span style="font-family:var(--mono);font-size:10px;background:var(--accent-soft);color:var(--accent-mid);padding:2px 7px;border-radius:4px;white-space:nowrap">helm</span>
+              </div>
             </div>
           </div>
         </div></div>
@@ -1753,11 +1832,15 @@ your pods (dev):
           <div class="code-block" style="margin-bottom:12px">
 <span class="cmt"># if git is missing: sudo apt-get install -y git</span>
 <span class="cmd">git clone https://github.com/brabia/gitops.git</span>
-<span class="cmd">cd linexa</span>
+<span class="cmd">cd gitops</span>
           </div>
 
+          <div style="font-size:11.5px;color:var(--text-2);margin-bottom:8px;line-height:1.6">
+            We are going to create a dedicated Kubernetes namespace for the dev environment. A namespace is a logical boundary inside the cluster — it isolates resources (pods, services, secrets) from other namespaces. Without it, everything would land in <span class="mono" style="font-size:10.5px">default</span>, making it impossible to apply per-environment policies or delete cleanly.<br><br>
+            <span class="mono" style="font-size:10.5px">k8s/namespaces/dev.yaml</span> creates three objects: the <strong style="color:var(--text-1)">Namespace</strong> itself, a <strong style="color:var(--text-1)">ResourceQuota</strong> capping CPU/memory so a misbehaving pod can't starve the node, and a <strong style="color:var(--text-1)">LimitRange</strong> setting default requests/limits on containers that don't declare their own.
+          </div>
           <div class="code-block">
-<span class="cmt"># still on the bastion, inside ~/linexa</span>
+<span class="cmt"># still on the bastion, inside ~/gitops</span>
 <span class="cmd">kubectl apply -f k8s/namespaces/dev.yaml</span>
 <span class="cmd">kubectl get ns linexa-dev</span>
           </div>
@@ -1881,8 +1964,8 @@ your pods (dev):
 <span class="cmt"># authenticate Docker to GAR (once per machine)</span>
 <span class="cmd">gcloud auth configure-docker europe-west1-docker.pkg.dev</span>
 
-<span class="cmt"># build + push — tag = git short SHA</span>
-<span class="cmd">TAG=$(git rev-parse --short HEAD)</span>
+<span class="cmt"># build + push — bump TAG before each release, don't forget to update it</span>
+<span class="cmd">TAG=0.0.1</span>
 <span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:$TAG \
   app/control-plane/</span>
 <span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:$TAG</span>
@@ -1970,21 +2053,52 @@ your pods (dev):
 
           <!-- HOW HELM FINDS THE FILES -->
           <div style="margin-top:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px">How Helm finds deployment.yaml and mysql.yaml</div>
-            <div style="font-size:11.5px;color:var(--text-2);margin-bottom:10px">You never reference them by name. Helm scans <span class="mono" style="font-size:10.5px">templates/</span> and renders <strong>every</strong> <span class="mono" style="font-size:10.5px">.yaml</span> file it finds there.</div>
-            <div class="code-block" style="font-size:11px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px">How Helm finds deployment.yaml and the other templates</div>
+            <div style="font-size:11.5px;color:var(--text-2);margin-bottom:10px">You never reference them by name. Helm scans <span class="mono" style="font-size:10.5px">templates/</span> and renders <strong>every</strong> <span class="mono" style="font-size:10.5px">.yaml</span> file it finds there — filling in <span class="mono" style="font-size:10.5px">{{ .Values.* }}</span> from your values files, then sending the result straight to the Kubernetes API.</div>
+            <div class="code-block" style="font-size:11px;margin-bottom:14px">
 <span style="color:var(--text-3)">helm/control-plane/</span>
-<span style="color:var(--text-3)">├── Chart.yaml</span>
-<span style="color:var(--text-3)">├── values.yaml</span>
-<span style="color:var(--text-3)">├── values-dev.yaml</span>
-<span style="color:var(--text-3)">└── templates/</span>          <span class="cmt">← Helm reads ALL files in here</span>
-<span style="color:var(--teal)">    ├── deployment.yaml</span>       <span class="cmt">✅ rendered + applied</span>
-<span style="color:var(--teal)">    ├── mysql.yaml</span>            <span class="cmt">✅ rendered + applied</span>
-<span style="color:var(--teal)">    ├── service.yaml</span>          <span class="cmt">✅ rendered + applied</span>
-<span style="color:var(--teal)">    ├── ingress.yaml</span>          <span class="cmt">✅ rendered + applied</span>
-<span style="color:var(--teal)">    └── configmap-nginx.yaml</span>  <span class="cmt">✅ rendered + applied</span>
+<span style="color:var(--text-3)">├── Chart.yaml</span>          <span class="cmt">identity file — name, version; Helm won't load the dir without it</span>
+<span style="color:var(--text-3)">├── values.yaml</span>         <span class="cmt">base defaults — always loaded first</span>
+<span style="color:var(--text-3)">├── values-dev.yaml</span>     <span class="cmt">env overrides — merged on top with -f flag</span>
+<span style="color:var(--text-3)">└── templates/</span>          <span class="cmt">← Helm renders ALL .yaml files in here</span>
+<span style="color:var(--teal)">    ├── deployment.yaml</span>      <span class="cmt">✓ rendered + applied</span>
+<span style="color:var(--teal)">    ├── service.yaml</span>         <span class="cmt">✓ rendered + applied</span>
+<span style="color:var(--teal)">    ├── ingress.yaml</span>         <span class="cmt">✓ rendered + applied (skipped if ingress.enabled: false)</span>
+<span style="color:var(--teal)">    ├── backend-config.yaml</span>  <span class="cmt">✓ rendered + applied (skipped if ingress.enabled: false)</span>
+<span style="color:var(--teal)">    └── configmap.yaml</span>       <span class="cmt">✓ rendered + applied (skipped if nginx.config is empty)</span>
             </div>
-            <div style="font-size:11px;color:var(--text-3);margin-top:8px">The file names don't matter — what matters is the <span class="mono" style="font-size:10.5px">kind:</span> field inside each file. Kubernetes reads <span class="mono" style="font-size:10.5px">kind: Deployment</span> → schedules the app pod. <span class="mono" style="font-size:10.5px">kind: StatefulSet</span> → schedules the MySQL pod.</div>
+
+            <!-- Per-file explanations -->
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px">
+                <div style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--text-1);margin-bottom:4px">deployment.yaml</div>
+                <div style="font-size:11.5px;color:var(--text-2);line-height:1.6">The running app. Tells Kubernetes: spin up <span class="mono" style="font-size:10.5px">replicaCount</span> pods, each running <span class="mono" style="font-size:10.5px">image.repository:image.tag</span> from your values. CPU and memory limits are set here too. The <span class="mono" style="font-size:10.5px">{{- if .Values.nginx.config }}</span> block is an optional escape hatch — if you set <span class="mono" style="font-size:10.5px">nginx.config</span> in values it mounts a ConfigMap over the baked-in nginx config at runtime. Currently unused.</div>
+              </div>
+
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px">
+                <div style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--text-1);margin-bottom:4px">service.yaml</div>
+                <div style="font-size:11.5px;color:var(--text-2);line-height:1.6">Makes the pods reachable inside the cluster. A Service is a stable address that load-balances across all pods matching <span class="mono" style="font-size:10.5px">app: {{ .Release.Name }}</span>. In dev it is <span class="mono" style="font-size:10.5px">NodePort</span> — GKE's GCE Ingress controller requires NodePort to route traffic into the cluster. The <span class="mono" style="font-size:10.5px">cloud.google.com/backend-config</span> annotation is only added when <span class="mono" style="font-size:10.5px">ingress.enabled: true</span> — it links this Service to the BackendConfig so GKE knows to attach Cloud Armor.</div>
+              </div>
+
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px">
+                <div style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--text-1);margin-bottom:4px">ingress.yaml</div>
+                <div style="font-size:11.5px;color:var(--text-2);line-height:1.6">The entry point from the internet. The entire file is skipped when <span class="mono" style="font-size:10.5px">ingress.enabled: false</span>. When enabled, <span class="mono" style="font-size:10.5px">kubernetes.io/ingress.class: gce</span> tells GKE's ingress controller to provision a real GCP HTTP(S) LB. The <span class="mono" style="font-size:10.5px">staticIpName</span> annotation pins it to the pre-reserved <span class="mono" style="font-size:10.5px">linexa-dev-ip</span> so the IP stays stable across <span class="mono" style="font-size:10.5px">helm uninstall</span> / reinstall cycles.</div>
+              </div>
+
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px">
+                <div style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--text-1);margin-bottom:4px">backend-config.yaml</div>
+                <div style="font-size:11.5px;color:var(--text-2);line-height:1.6">GKE-specific custom resource (<span class="mono" style="font-size:10.5px">cloud.google.com/v1beta1</span>) — plain Kubernetes knows nothing about it. It wires Cloud Armor to the LB backend. Also conditional on <span class="mono" style="font-size:10.5px">ingress.enabled</span>. When <span class="mono" style="font-size:10.5px">cloudArmor.enabled: true</span> it adds a <span class="mono" style="font-size:10.5px">securityPolicy</span> block pointing to <span class="mono" style="font-size:10.5px">linexa-dev-allowlist</span>. When false, the resource still exists but is empty — GKE requires it to be present whenever the Service carries the BackendConfig annotation, even with no policy attached.</div>
+              </div>
+
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px">
+                <div style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--text-1);margin-bottom:4px">configmap.yaml</div>
+                <div style="font-size:11.5px;color:var(--text-2);line-height:1.6">Only rendered if <span class="mono" style="font-size:10.5px">nginx.config</span> is set in values — it is <span class="mono" style="font-size:10.5px">""</span> by default so this file produces nothing. Its purpose: if you need to change the nginx config without rebuilding the Docker image, set <span class="mono" style="font-size:10.5px">nginx.config: |</span> in values and Helm creates this ConfigMap. The <span class="mono" style="font-size:10.5px">deployment.yaml</span> mounts it over <span class="mono" style="font-size:10.5px">/etc/nginx/conf.d/default.conf</span> at runtime, overriding the baked-in config.</div>
+              </div>
+
+            </div>
+
+            <div style="font-size:11px;color:var(--text-3);padding:8px 10px;background:var(--surface-2);border-radius:var(--r);border:1px solid var(--border)">The file names don't matter to Helm — what matters is the <span class="mono" style="font-size:10.5px">kind:</span> field inside each file. You could rename <span class="mono" style="font-size:10.5px">deployment.yaml</span> to <span class="mono" style="font-size:10.5px">app.yaml</span> and it would work identically. MySQL is not in this chart — the control-plane is stateless (php-fpm + nginx only). MySQL lives in Docker Compose for local dev and would be a separate chart if added to GKE.</div>
           </div>
 
           <div style="margin-top:12px;padding:10px 14px;border-radius:var(--r);background:var(--teal-soft);border:1px solid var(--teal);font-size:12px;color:var(--text-2)">
@@ -2577,7 +2691,8 @@ your pods (dev):
 
 <span class="cmt"># 3. Laptop — remove link from index.php, rebuild + push</span>
 <span class="cmt">#    edit app/control-plane/src/index.php — delete the &lt;a&gt; for this tenant</span>
-<span class="cmd">TAG=$(git rev-parse --short HEAD)</span>
+<span class="cmt">#    bump TAG before pushing — don't forget to update it</span>
+<span class="cmd">TAG=0.0.1</span>
 <span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:$TAG app/control-plane/</span>
 <span class="cmd">docker push  europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:$TAG</span>
 
