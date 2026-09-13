@@ -1,0 +1,11 @@
+# versions.yaml — single source of truth for all image tags
+# Bump the tag here, commit, then run ./deploy.sh on the bastion.
+#
+# After bumping a tag:
+#   1. docker build + push with the new tag (on your laptop)
+#   2. git commit + push this file
+#   3. bastion: git pull && ./deploy.sh [service]
+
+control-plane:    "0.0.2"
+tenant-cfd4486:   "0.0.1"
+tenant-3622fab:   "0.0.1"
