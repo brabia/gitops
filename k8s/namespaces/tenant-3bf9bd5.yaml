@@ -16,9 +16,9 @@ metadata:
 spec:
   hard:
     requests.cpu: "500m"
-    requests.memory: 256Mi
+    requests.memory: 768Mi
     limits.cpu: "1"
-    limits.memory: 512Mi
+    limits.memory: 1Gi
     pods: "5"
 ---
 apiVersion: v1
