@@ -26,6 +26,12 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
+    # allow GCP LB forwarded traffic on port 80
+    # GKE SNATs LB traffic to node IPs — these are not pod IPs so
+    # podSelector/namespaceSelector cannot match them; allow by port only
+    - ports:
+        - protocol: TCP
+          port: 80
   egress:
     # allow DNS (kube-dns in kube-system, UDP+TCP 53)
     - to:
