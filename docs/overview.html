@@ -2665,8 +2665,9 @@ your pods (dev):
           <div class="code-block">
 <span class="cmd">kubectl get pods -n linexa-tenant-cfd4486</span>   <span class="cmt"># NAME READY STATUS</span>
 <span class="cmd">kubectl get pods -n linexa-tenant-3622fab</span>   <span class="cmt"># tenant-3622fab-xxx 1/1 Running</span>
-<span class="cmd">kubectl get ingress -n linexa-tenant-cfd4486</span>
-<span class="cmd">kubectl get ingress -n linexa-tenant-3622fab</span>
+
+<span class="cmt"># get the tenant LB IP — ADDRESS column (each tenant Ingress gets its own GCP LB)</span>
+<span class="cmd">kubectl get ingress -A</span>
           </div>
 
           <!-- isolation proof -->
