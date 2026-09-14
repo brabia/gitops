@@ -1,0 +1,26 @@
+# Applied ONLY to the linexa-dev namespace — additive to tenant-isolation.yaml.
+# Allows tenant pods to read tenants.enabled from the control-plane MySQL.
+# Tenant-to-tenant MySQL isolation is unchanged (each tenant namespace still
+# blocks ingress from other namespaces via its own tenant-isolation policy).
+#
+# kubectl apply -f this file -n linexa-dev
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: control-plane-mysql-tenant-read
+spec:
+  podSelector:
+    matchLabels:
+      app: mysql          # targets only the MySQL pod in linexa-dev
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: linexa/tenant
+                operator: Exists  # matches linexa-tenant-cfd4486, 3622fab, 3bf9bd5
+      ports:
+        - protocol: TCP
+          port: 3306
