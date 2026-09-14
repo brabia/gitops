@@ -148,7 +148,7 @@ foreach ($crossTargets as $ns => $host) {
   <div class="header">
     <div class="badge">tenant: <?= $tenantId ?></div>
     <h1>Hello from <?= $namespace ?></h1>
-    <p class="meta"><?= $now->format('Y-m-d H:i:s') ?> UTC &nbsp;·&nbsp; own pod &nbsp;·&nbsp; own namespace &nbsp;·&nbsp; own MySQL</p>
+    <p class="meta"><?= $now->format('Y-m-d H:i:s') ?> UTC &nbsp;·&nbsp; own pod &nbsp;·&nbsp; own namespace &nbsp;·&nbsp; own MySQL &nbsp;·&nbsp; <span style="color:#a78bfa"><?= htmlspecialchars(getenv('IMAGE_TAG') ?: 'dev') ?></span></p>
   </div>
 
   <!-- own users -->
