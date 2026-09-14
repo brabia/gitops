@@ -2,7 +2,7 @@
 
 image:
   repository: europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane
-  tag: "0.0.9"               # bump this before each release
+  tag: "0.0.10"              # bump this before each release
 
 service:
   type: NodePort             # GKE GCE Ingress requires NodePort

@@ -68,10 +68,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tenant_id']) && $db) 
     exit;
 }
 
+// ── Generate a unique tenant ID ───────────────────────────────────────────────
+function generateTenantId(PDO $db): string {
+    do {
+        $id = bin2hex(random_bytes(4)); // 7-char hex, e.g. a1b2c3d4 → trimmed to 7
+        $id = substr($id, 0, 7);
+        $chk = $db->prepare('SELECT COUNT(*) FROM tenants WHERE namespace = ?');
+        $chk->execute(['linexa-tenant-' . $id]);
+    } while ((int)$chk->fetchColumn() > 0);
+    return $id;
+}
+$generatedId = $db ? generateTenantId($db) : substr(bin2hex(random_bytes(4)), 0, 7);
+
+// ── Create new tenant ─────────────────────────────────────────────────────────
+$createSuccess = null;
+$createError   = null;
+$createdTenant = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_tenant' && $db) {
+    $tenantId = $_POST['tenant_slug'] ?? '';
+    $orgId    = (int)($_POST['org_id'] ?? 0);
+    $name     = trim($_POST['tenant_name'] ?? '') ?: 'Tenant ' . $tenantId;
+
+    $ns  = 'linexa-tenant-' . $tenantId;
+    $url = 'http://dev.tenant-' . $tenantId . '.linexa.eu';
+
+    // re-verify uniqueness on submit (race-condition guard)
+    $chk = $db->prepare('SELECT COUNT(*) FROM tenants WHERE namespace = ?');
+    $chk->execute([$ns]);
+    if ((int)$chk->fetchColumn() > 0) {
+        // collision — regenerate and show error so user can resubmit
+        $createError = 'ID collision on submit — a new ID has been generated. Please submit again.';
+        $generatedId = generateTenantId($db);
+    } elseif ($orgId <= 0) {
+        $createError = 'Please select an organization.';
+    } else {
+        $ins = $db->prepare('INSERT INTO tenants (org_id, name, namespace, url, enabled) VALUES (?, ?, ?, ?, 1)');
+        $ins->execute([$orgId, $name, $ns, $url]);
+        $createSuccess = 'Tenant created in database.';
+        $createdTenant = ['slug' => $tenantId, 'namespace' => $ns, 'url' => $url, 'name' => $name];
+        $generatedId   = $db ? generateTenantId($db) : substr(bin2hex(random_bytes(4)), 0, 7);
+    }
+}
+
 // ── Fetch orgs → tenants ──────────────────────────────────────────────────────
-$orgs = [];
+$orgs    = [];
+$orgList = [];   // for select dropdown
 if ($db) {
     foreach ($db->query('SELECT * FROM organizations ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) as $org) {
+        $orgList[] = $org;
         $stmt = $db->prepare('SELECT * FROM tenants WHERE org_id = ? ORDER BY id');
         $stmt->execute([$org['id']]);
         $org['tenants'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -176,6 +220,51 @@ foreach ($crossTargets as $ns => $host) {
                    color: #f87171; cursor: pointer; }
     .btn-disable:hover { background: #7f1d1d; }
 
+    /* ── New tenant form ── */
+    .new-tenant-bar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+    .btn-new { font-size: .75rem; font-weight: 600; padding: .3rem .8rem;
+               border-radius: 6px; border: 1px solid #0369a1; background: #0c1a2e;
+               color: #38bdf8; cursor: pointer; display: flex; align-items: center; gap: .35rem; }
+    .btn-new:hover { background: #0f2644; border-color: #38bdf8; }
+
+    .new-tenant-form { background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+                       padding: 1rem 1.25rem; margin-bottom: 1rem; display: none; }
+    .new-tenant-form.open { display: block; }
+    .form-row  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
+    .form-group label { display: block; font-size: .68rem; font-weight: 700;
+                        letter-spacing: .07em; text-transform: uppercase; color: #64748b;
+                        margin-bottom: .35rem; }
+    .form-group input,
+    .form-group select { width: 100%; background: #1e293b; border: 1px solid #334155;
+                          border-radius: 6px; padding: .4rem .65rem; font-size: .82rem;
+                          color: #e2e8f0; font-family: inherit; }
+    .form-group input:focus,
+    .form-group select:focus { outline: none; border-color: #38bdf8; }
+    .form-group input::placeholder { color: #475569; }
+    .form-actions { display: flex; gap: .5rem; justify-content: flex-end; }
+    .btn-submit { font-size: .75rem; font-weight: 600; padding: .35rem .9rem;
+                  border-radius: 6px; border: 1px solid #0369a1; background: #0c4a6e;
+                  color: #38bdf8; cursor: pointer; }
+    .btn-submit:hover { background: #075985; }
+    .btn-cancel { font-size: .75rem; font-weight: 600; padding: .35rem .9rem;
+                  border-radius: 6px; border: 1px solid #334155; background: transparent;
+                  color: #64748b; cursor: pointer; }
+    .btn-cancel:hover { border-color: #64748b; color: #94a3b8; }
+
+    /* ── Create result ── */
+    .create-result { border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .create-result.success { background: #022c22; border: 1px solid #065f46; }
+    .create-result.error   { background: #1c0a00; border: 1px solid #7f1d1d; }
+    .create-result-title { font-size: .8rem; font-weight: 700; margin-bottom: .5rem; }
+    .create-result.success .create-result-title { color: #34d399; }
+    .create-result.error   .create-result-title { color: #f87171; }
+    .deploy-cmds { font-family: monospace; font-size: .75rem; background: #0f172a;
+                   border: 1px solid #1e3050; border-radius: 6px; padding: .75rem 1rem;
+                   color: #94a3b8; margin-top: .6rem; white-space: pre; overflow-x: auto;
+                   line-height: 1.7; }
+    .deploy-cmds .cmd { color: #e2e8f0; }
+    .deploy-cmds .cmt { color: #475569; }
+
     /* ── Query block ── */
     .query { font-family: monospace; font-size: .8rem; background: #0f172a;
              border: 1px solid #334155; border-radius: 6px; padding: .6rem .9rem;
@@ -215,6 +304,88 @@ foreach ($crossTargets as $ns => $host) {
   <!-- ── Tenant management ── -->
   <div class="card">
     <div class="card-title">Organizations &amp; Tenants</div>
+
+    <!-- New tenant button -->
+    <div class="new-tenant-bar">
+      <button class="btn-new" onclick="toggleForm()">
+        <span>＋</span> New Tenant
+      </button>
+    </div>
+
+    <!-- Create error -->
+    <?php if ($createError): ?>
+    <div class="create-result error">
+      <div class="create-result-title">⚠ <?= htmlspecialchars($createError) ?></div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Create success + deploy commands -->
+    <?php if ($createSuccess && $createdTenant): $t = $createdTenant; ?>
+    <div class="create-result success">
+      <div class="create-result-title">✓ <?= htmlspecialchars($t['name']) ?> added to database</div>
+      <div style="font-size:.78rem;color:#6ee7b7;margin-bottom:.5rem">
+        Now deploy the namespace, NetworkPolicy, and Helm release on the bastion:
+      </div>
+      <div class="deploy-cmds"><span class="cmt"># ① namespace + NetworkPolicies</span>
+<span class="cmd">cp k8s/namespaces/tenant-cfd4486.yaml k8s/namespaces/tenant-<?= $t['slug'] ?>.yaml</span>
+<span class="cmt"># replace cfd4486 → <?= $t['slug'] ?> in that file, then:</span>
+<span class="cmd">kubectl apply -f k8s/namespaces/tenant-<?= $t['slug'] ?>.yaml</span>
+<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n <?= $t['namespace'] ?></span>
+
+<span class="cmt"># ② build + push image</span>
+<span class="cmd">TAG=0.0.1
+docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-<?= $t['slug'] ?>:$TAG \
+  app/tenants/<?= $t['slug'] ?>
+docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-<?= $t['slug'] ?>:$TAG</span>
+
+<span class="cmt"># ③ helm deploy</span>
+<span class="cmd">helm upgrade --install tenant-<?= $t['slug'] ?> ./helm/tenant \
+  -n <?= $t['namespace'] ?> \
+  --set tenantId=<?= $t['slug'] ?> \
+  --set image.repository=europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-<?= $t['slug'] ?> \
+  --set image.tag=$TAG</span>
+
+<span class="cmt"># ④ add to hosts file (PowerShell Admin)</span>
+<span class="cmd">kubectl get ingress -n <?= $t['namespace'] ?>   # get LB IP
+Add-Content "C:\Windows\System32\drivers\etc\hosts" "&lt;LB_IP&gt;  dev.tenant-<?= $t['slug'] ?>.linexa.eu"</span></div>
+    </div>
+    <?php endif; ?>
+
+    <!-- New tenant form (hidden by default) -->
+    <div class="new-tenant-form" id="newTenantForm">
+      <form method="POST">
+        <input type="hidden" name="action" value="create_tenant">
+        <input type="hidden" name="tenant_slug" value="<?= htmlspecialchars($generatedId) ?>">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tenant ID</label>
+            <div style="display:flex;align-items:center;gap:.5rem;height:2rem">
+              <span style="font-family:monospace;font-size:.85rem;color:#38bdf8;background:#0c1a2e;
+                           border:1px solid #0369a1;border-radius:6px;padding:.3rem .75rem;
+                           letter-spacing:.05em"><?= htmlspecialchars($generatedId) ?></span>
+              <span style="font-size:.68rem;color:#475569">auto-generated · unique</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="org">Organization</label>
+            <select id="org" name="org_id" required>
+              <option value="">— select —</option>
+              <?php foreach ($orgList as $o): ?>
+              <option value="<?= $o['id'] ?>"><?= htmlspecialchars($o['name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tname">Display name</label>
+            <input type="text" id="tname" name="tenant_name" placeholder="optional, auto-generated">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" onclick="toggleForm()">Cancel</button>
+          <button type="submit" class="btn-submit">Create tenant</button>
+        </div>
+      </form>
+    </div>
 
     <?php if (empty($orgs)): ?>
       <p style="color:#64748b;font-size:.85rem">No organizations yet.</p>
@@ -326,5 +497,18 @@ foreach ($crossTargets as $ns => $host) {
   </div>
 
 </div>
+<script>
+function toggleForm() {
+  const f = document.getElementById('newTenantForm');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) {
+    document.getElementById('org').focus();
+  }
+}
+// auto-open form if there was a validation error
+<?php if ($createError): ?>
+document.getElementById('newTenantForm').classList.add('open');
+<?php endif; ?>
+</script>
 </body>
 </html>

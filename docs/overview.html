@@ -1037,7 +1037,7 @@ svg.ov-pipeline{display:block;width:100%;min-width:620px}
         <div class="p-step">☸ ArgoCD syncs staging</div>
       </div>
       <div class="phase-list">
-        <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right"><div class="trigger-badge trigger-auto">auto on merge</div><div class="phase-title">Multi-stage Docker build</div><div class="phase-subtitle">docker/build-push-action with layer caching. Build stage: install PHP extensions. Runtime stage: copy binaries only — minimal final image.</div><div class="step-list"><div class="step-card"><div class="step-title">Build stage</div><div class="step-desc">Install pdo_mysql, mbstring, intl, opcache. Copy php-fpm.conf.</div></div><div class="step-card"><div class="step-title">Runtime stage</div><div class="step-desc">Copy compiled extensions. Set www-data user. COPY app/src → /var/www/html.</div></div></div></div></div>
+        <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right"><div class="trigger-badge trigger-auto">auto on merge</div><div class="phase-title">Multi-stage Docker build</div><div class="phase-subtitle">docker/build-push-action with layer caching. Build stage: install PHP extensions. Runtime stage: copy binaries only — minimal final image.</div><div class="step-list"><div class="step-card"><div class="step-title">Build stage</div><div class="step-desc">Install pdo_mysql, mbstring, intl, opcache. Copy php-fpm.conf.</div></div><div class="step-card"><div class="step-title">Runtime stage</div><div class="step-desc">Copy compiled extensions. Set www-data user. COPY app/control-plane/src → /var/www/html.</div></div></div></div></div>
         <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right"><div class="trigger-badge trigger-auto">auto</div><div class="phase-title">Push + git write-back</div><div class="phase-subtitle">Image tagged sha-abc1234, branch, and latest. Patches values-staging.yaml with new SHA and pushes — ArgoCD detects within 3 min.</div></div></div>
       </div>
       <hr class="divider"/>
@@ -2504,7 +2504,7 @@ your pods (dev):
           <div style="margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px">Do I need to rebuild the image every time?</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--ruby);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2)">
-              <strong style="color:var(--ruby)">PHP source files changed</strong> (<span class="mono" style="font-size:10.5px">app/src/</span>) — <strong>Yes.</strong> Files are baked into the image at build time. Bump the version, rebuild, push, then pass the new tag to Helm.
+              <strong style="color:var(--ruby)">PHP source files changed</strong> (<span class="mono" style="font-size:10.5px">app/control-plane/src/</span> or <span class="mono" style="font-size:10.5px">app/tenants/&lt;id&gt;/src/</span>) — <strong>Yes.</strong> Files are baked into the image at build time. Bump the version, rebuild, push, then pass the new tag to Helm.
               <div class="code-block" style="margin-top:8px;font-size:11px">
 <span class="cmt"># bump version (on your laptop)</span>
 <span class="cmd">VERSION=0.0.2</span>
@@ -2529,7 +2529,7 @@ your pods (dev):
               <strong>Local development (Docker Compose)</strong> — <strong>Never rebuild.</strong> The bind mount makes PHP changes instant — edit a file, refresh the browser.
               <div class="code-block" style="margin-top:8px;font-size:11px">
 <span style="color:var(--text-3)">volumes:</span>
-<span style="color:var(--text-3)">  - ./app/src:/var/www/html</span>   <span class="cmt"># live reload — no restart needed</span>
+<span style="color:var(--text-3)">  - ./app/control-plane/src:/var/www/html</span>   <span class="cmt"># live reload — no restart needed</span>
               </div>
             </div>
             <div style="padding:8px 12px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--border);font-size:11px;color:var(--text-3)">
@@ -2755,87 +2755,78 @@ your pods (dev):
         <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right">
           <div class="trigger-badge" style="background:var(--lavender-soft);color:var(--lavender)">when onboarding a new tenant</div>
           <div class="phase-title">9c. Add a new tenant</div>
-          <div class="phase-subtitle">Replace <span class="mono">&lt;ID&gt;</span> with the new tenant identifier (e.g. a short commit SHA or slug). Nine steps total — four on the laptop, four on the bastion, one hosts file update.</div>
+          <div class="phase-subtitle">The control plane UI handles the database record and generates the tenant ID automatically. The remaining steps provision the k8s namespace, build the image, and deploy via Helm.</div>
 
-          <!-- laptop steps -->
-          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">On your laptop — repo</div>
+          <!-- step 1: control plane UI -->
+          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">Control plane UI — <span style="color:var(--teal)">dev.linexa.eu</span></div>
 
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">① Create app files</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">① Create tenant in database</div>
+          <div style="font-size:12px;color:var(--text-2);margin-bottom:8px;line-height:1.6">Open <span class="mono">http://dev.linexa.eu</span> → click <strong>＋ New Tenant</strong> → select an organization → optionally set a display name → click <strong>Create tenant</strong>.<br>The tenant ID is auto-generated (7-char hex, unique). On success the page shows the exact deploy commands pre-filled with that ID — copy them.</div>
+
+          <!-- step 2: laptop -->
+          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">Laptop — repo</div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">② Create app files + namespace manifest</div>
           <div class="code-block">
-<span class="cmt"># copy an existing tenant and replace the tenant ID</span>
+<span class="cmt"># copy existing tenant, replace ID throughout</span>
 <span class="cmd">cp -r app/tenants/cfd4486 app/tenants/&lt;ID&gt;</span>
-<span class="cmt"># edit app/tenants/&lt;ID&gt;/src/index.php — change badge + title to &lt;ID&gt;</span>
-          </div>
+<span class="cmt"># edit app/tenants/&lt;ID&gt;/src/index.php — update $tenantId, $namespace, seed emails, badge colour</span>
 
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">② Create namespace manifest + Helm values</div>
-          <div class="code-block">
-<span class="cmt"># namespace + ResourceQuota + LimitRange</span>
+<span class="cmt"># namespace manifest</span>
 <span class="cmd">cp k8s/namespaces/tenant-cfd4486.yaml k8s/namespaces/tenant-&lt;ID&gt;.yaml</span>
-<span class="cmt"># replace every occurrence of cfd4486 with &lt;ID&gt; inside the file</span>
-
-<span class="cmt"># Helm values</span>
-<span class="cmd">cp helm/tenant-cfd4486.yaml helm/tenant-&lt;ID&gt;.yaml</span>
-<span class="cmt"># replace tenantId and image.repository tenant name with &lt;ID&gt;</span>
+<span class="cmt"># replace every "cfd4486" with "&lt;ID&gt;" in that file</span>
           </div>
 
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">③ Add link to control plane</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">③ Build + push image</div>
           <div class="code-block">
-<span class="cmt"># edit app/control-plane/src/index.php — add inside .links div:</span>
-<span class="cmd">&lt;a href="http://dev.tenant-&lt;ID&gt;.linexa.eu"&gt;&amp;rarr; tenant &lt;ID&gt;&lt;/a&gt;</span>
+<span class="cmd">TAG=0.0.1</span>
+<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-&lt;ID&gt;:$TAG app/tenants/&lt;ID&gt;</span>
+<span class="cmd">docker push  europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-&lt;ID&gt;:$TAG</span>
           </div>
 
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">④ Build, push &amp; commit</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">④ Commit + push</div>
           <div class="code-block">
-<span class="cmt"># build + push new tenant image</span>
-<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-&lt;ID&gt;:0.0.1 app/tenants/&lt;ID&gt;</span>
-<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-&lt;ID&gt;:0.0.1</span>
-
-<span class="cmt"># rebuild control plane (new link baked in)</span>
-<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:0.0.1 app/control-plane/</span>
-<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/control-plane:0.0.1</span>
-
 <span class="cmd">git add .</span>
 <span class="cmd">git commit -m "feat: add tenant &lt;ID&gt;"</span>
-<span class="cmd">git -c http.sslVerify=false push</span>
+<span class="cmd">git push</span>
           </div>
 
-          <!-- bastion steps -->
-          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">On the bastion</div>
+          <!-- step 3: bastion -->
+          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">Bastion</div>
 
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑤ Pull + apply namespace + NetworkPolicy</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑤ Apply namespace + NetworkPolicies</div>
           <div class="code-block">
 <span class="cmd">cd ~/gitops &amp;&amp; git pull</span>
 <span class="cmd">kubectl apply -f k8s/namespaces/tenant-&lt;ID&gt;.yaml</span>
 <span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-&lt;ID&gt;</span>
+<span class="cmt"># control-plane-mysql-tenant-read is already applied to linexa-dev — no change needed</span>
           </div>
 
           <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑥ Deploy with Helm</div>
           <div class="code-block">
+<span class="cmd">TAG=0.0.1</span>
 <span class="cmd">helm upgrade --install tenant-&lt;ID&gt; ./helm/tenant \
   -n linexa-tenant-&lt;ID&gt; \
-  -f ./helm/tenant-&lt;ID&gt;.yaml \
-  --set image.tag=0.0.1</span>
+  --set tenantId=&lt;ID&gt; \
+  --set image.repository=europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-&lt;ID&gt; \
+  --set image.tag=$TAG</span>
           </div>
 
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑦ Redeploy control plane to pick up the new link</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑦ Verify</div>
           <div class="code-block">
-<span class="cmd">helm upgrade control-plane ./helm/control-plane \
-  -n linexa-dev \
-  -f helm/control-plane/values.yaml \
-  -f helm/control-plane/values-dev.yaml</span>
+<span class="cmd">kubectl get pods -n linexa-tenant-&lt;ID&gt;</span>
+<span class="cmd">kubectl get ingress -n linexa-tenant-&lt;ID&gt;</span>   <span class="cmt"># note ADDRESS (LB IP)</span>
           </div>
 
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑧ Get the new tenant LB IP</div>
-          <div class="code-block">
-<span class="cmd">kubectl get ingress -A</span>   <span class="cmt"># note ADDRESS for linexa-tenant-&lt;ID&gt;</span>
-          </div>
+          <!-- step 4: hosts file -->
+          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">Laptop — hosts file (PowerShell as Administrator)</div>
 
-          <!-- hosts file -->
-          <div style="font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px">On your laptop — hosts file (Administrator)</div>
-
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑨ Add hosts entry</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑧ Add hosts entry</div>
           <div class="code-block">
 <span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "&lt;LB_IP&gt;  dev.tenant-&lt;ID&gt;.linexa.eu"</span>
+          </div>
+          <div style="background:var(--emerald-soft);border:1px solid var(--emerald);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--text-2);margin-top:8px">
+            Open <span class="mono" style="font-size:11px">http://dev.tenant-&lt;ID&gt;.linexa.eu</span> — the tenant page should load with its own badge, own MySQL data, and the IMAGE_TAG in the header.
           </div>
 
         </div></div>
@@ -3217,17 +3208,17 @@ function navTo(section,titlePrefix){
 const OV_DATA={
   dev:{
     title:'💻 Developer Machine',
-    version:'docker compose · hot-reload on ./app/src',
-    desc:'Run docker compose up -d. Port :8080 → nginx → php-fpm (FastCGI :9000) → MySQL :3306. The ./app/src directory is bind-mounted so every file save is live without rebuilding the image.',
-    facts:['http://localhost:8080 after up','nginx → php-fpm via FastCGI :9000','bind-mount: ./app/src (instant reload)','adminer on :8081 with --profile tools','docker compose down -v to wipe data'],
-    files:['docker-compose.yml','app/Dockerfile','.env (gitignored)','app/src/index.php']
+    version:'docker compose · hot-reload on ./app/control-plane/src',
+    desc:'Run docker compose up -d. Port :8080 → nginx → php-fpm (FastCGI :9000) → MySQL :3306. The ./app/control-plane/src directory is bind-mounted so every file save is live without rebuilding the image.',
+    facts:['http://localhost:8080 after up','nginx → php-fpm via FastCGI :9000','bind-mount: ./app/control-plane/src (instant reload)','adminer on :8081 with --profile tools','docker compose down -v to wipe data'],
+    files:['docker-compose.yml','app/control-plane/Dockerfile','.env (gitignored)','app/control-plane/src/index.php']
   },
   git:{
     title:'📁 GitHub Repository',
     version:'source of truth — all code, chart, config',
     desc:'Everything lives here: application source, Helm chart, ArgoCD config, and k8s manifests. A push to main triggers CI. ArgoCD polls this repo every 3 minutes for drift.',
     facts:['app/** → triggers build-push.yml CI','helm/** → triggers helm-lint.yml on PRs','CI commits image SHA back to values-dev.yaml','ArgoCD reads argocd/ for app definitions'],
-    files:['helm/control-plane/','k8s/namespaces/dev.yaml','app/src/','argocd/']
+    files:['helm/control-plane/','k8s/namespaces/dev.yaml','app/control-plane/src/','argocd/']
   },
   ci:{
     title:'⚡ GitHub Actions',
