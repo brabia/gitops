@@ -743,7 +743,7 @@ svg.ov-pipeline{display:block;width:100%;min-width:620px}
 
   <!-- K8s -->
   <div id="sec-k8s" class="section hidden">
-    <div class="section-hero"><div class="section-eyebrow">kubernetes</div><div class="section-title">Cluster resources</div><div class="section-desc">One namespace (<span class="mono" style="font-size:12px">linexa-dev</span>), one sidecar pod pattern (nginx + php-fpm). Deployed with <span class="mono" style="font-size:12px">helm upgrade --install</span>.</div></div>
+    <div class="section-hero"><div class="section-eyebrow">kubernetes</div><div class="section-title">Cluster resources</div><div class="section-desc">Four namespaces: <span class="mono" style="font-size:12px">linexa-dev</span> (control plane) + three tenant namespaces. Sidecar pod pattern (nginx + php-fpm) in each. Deployed with <span class="mono" style="font-size:12px">helm upgrade --install</span>.</div></div>
     <div class="section-body">
 
       <!-- CLUSTER DIAGRAM -->
@@ -1090,8 +1090,9 @@ svg.ov-pipeline{display:block;width:100%;min-width:620px}
 
           <!-- tenants -->
           <div class="tree-file" style="background:var(--surface-2)"><span class="tree-leaf">└─</span><span class="tree-fname" style="color:var(--lavender)">tenants/</span><span class="tree-desc">One sub-directory per tenant. Each gets its own Dockerfile, its own image, its own namespace, and its own pod. Zero blast radius — a crash in one tenant cannot affect another.</span></div>
-          <div class="tree-file"><span class="tree-leaf">   ├─</span><span class="tree-fname">cfd4486/</span><span class="tree-desc">Tenant app identified by short commit SHA. Contains <span class="mono" style="font-size:10.5px">Dockerfile</span> + <span class="mono" style="font-size:10.5px">index.html</span>. Built and pushed as <span class="mono" style="font-size:10.5px">ghcr.io/brabia/linexa-tenant-cfd4486:0.0.1</span>.</span></div>
-          <div class="tree-file"><span class="tree-leaf">   └─</span><span class="tree-fname">3622fab/</span><span class="tree-desc">Second tenant — same pattern. Each tenant's image is independent; upgrading one has no effect on the others.</span></div>
+          <div class="tree-file"><span class="tree-leaf">   ├─</span><span class="tree-fname">cfd4486/</span><span class="tree-desc">Tenant app. Contains <span class="mono" style="font-size:10.5px">Dockerfile</span> + <span class="mono" style="font-size:10.5px">src/index.php</span>. Built and pushed as <span class="mono" style="font-size:10.5px">europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:TAG</span>.</span></div>
+          <div class="tree-file"><span class="tree-leaf">   ├─</span><span class="tree-fname">3622fab/</span><span class="tree-desc">Second tenant — same pattern. Each tenant's image is independent; upgrading one has no effect on the others.</span></div>
+          <div class="tree-file"><span class="tree-leaf">   └─</span><span class="tree-fname">3bf9bd5/</span><span class="tree-desc">Third tenant — same pattern. Users: Eve, Frank. Orange accent colour in the UI.</span></div>
 
         </div>
       </div>
@@ -2593,15 +2594,19 @@ your pods (dev):
             <div style="font-family:var(--mono);font-size:11px;line-height:2;color:var(--text-3)">
               tenants/<br>
               &nbsp;&nbsp;cfd4486/<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">Dockerfile</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← FROM nginx:1.27-alpine, COPYs index.html</span><br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">index.html</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← hello world page</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">Dockerfile</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← php:8.2-fpm + nginx, own MySQL</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">src/index.php</span>&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← reads IMAGE_TAG, checks enabled flag, own DB</span><br>
               &nbsp;&nbsp;3622fab/<br>
               &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">Dockerfile</span><br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">index.html</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">src/index.php</span><br>
+              &nbsp;&nbsp;3bf9bd5/<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">Dockerfile</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent-mid)">src/index.php</span><br>
               helm/<br>
-              &nbsp;&nbsp;<span style="color:var(--teal)">tenant/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← reusable chart: namespace + deployment + service + ingress</span><br>
-              &nbsp;&nbsp;<span style="color:var(--teal)">tenant-cfd4486.yaml</span><br>
-              &nbsp;&nbsp;<span style="color:var(--teal)">tenant-3622fab.yaml</span>
+              &nbsp;&nbsp;<span style="color:var(--teal)">tenant/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← reusable chart: namespace + deployment (IMAGE_TAG env) + service + ingress</span><br>
+              k8s/network-policies/<br>
+              &nbsp;&nbsp;<span style="color:var(--teal)">tenant-isolation.yaml</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← applied to all 4 namespaces</span><br>
+              &nbsp;&nbsp;<span style="color:var(--teal)">control-plane-mysql-tenant-read.yaml</span>&nbsp;<span style="color:var(--text-3);font-family:var(--sans)">← applied to linexa-dev only</span>
             </div>
           </div>
 
@@ -2611,7 +2616,7 @@ your pods (dev):
               <div class="card-stripe" style="background:var(--lavender)"></div>
               <div class="card-body">
                 <div class="card-name">Separate namespace</div>
-                <div class="card-desc">Each tenant lives in <span class="mono">linexa-tenant-cfd4486</span> or <span class="mono">linexa-tenant-3622fab</span> — completely isolated from the main app's <span class="mono">linexa-dev</span> namespace and from each other.</div>
+                <div class="card-desc">Each tenant lives in its own namespace (<span class="mono">linexa-tenant-cfd4486</span>, <span class="mono">linexa-tenant-3622fab</span>, <span class="mono">linexa-tenant-3bf9bd5</span>) — completely isolated from the main app's <span class="mono">linexa-dev</span> namespace and from each other.</div>
               </div>
             </div>
             <div class="card">
@@ -2631,84 +2636,87 @@ your pods (dev):
           </div>
 
           <!-- step 1: build & push -->
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">① Build &amp; push both tenant images</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">① Build &amp; push all three tenant images</div>
           <div class="code-block">
 <span class="cmt"># auth once per machine (skip if already done in step 5)</span>
 <span class="cmd">gcloud auth configure-docker europe-west1-docker.pkg.dev</span>
 
-<span class="cmt"># Build + push tenant cfd4486</span>
-<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1 app/tenants/cfd4486</span>
-<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1</span>
-
-<span class="cmt"># Build + push tenant 3622fab</span>
-<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-3622fab:0.0.1 app/tenants/3622fab</span>
-<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-3622fab:0.0.1</span>
+<span class="cmt"># Build + push all 3 tenants in one loop</span>
+<span class="cmd">TAG=0.0.12</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG} app/tenants/${tenant}</span>
+<span class="cmd">  docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG}</span>
+<span class="cmd">done</span>
           </div>
           <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-bottom:12px">
             <strong style="color:var(--teal)">No imagePullSecret needed</strong> — GAR is in the same GCP project. The node service account already has <span class="mono" style="font-size:10.5px">roles/artifactregistry.reader</span> via Workload Identity. GKE pulls the image automatically.
           </div>
 
           <!-- step 2: create namespace + network policy -->
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">② Create namespace + apply NetworkPolicy</div>
-          <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Same pattern as the control plane — namespace is a standalone manifest in <span class="mono">k8s/namespaces/</span>, applied before Helm. Deletion is also manual (<span class="mono">kubectl delete namespace</span>).</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">② Create namespaces + apply NetworkPolicies</div>
+          <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Namespace manifests are in <span class="mono">k8s/namespaces/</span>. Two NetworkPolicy files: one applied to all 4 namespaces (isolation), one applied only to linexa-dev (opens MySQL for tenant enabled-flag check).</div>
           <div class="code-block">
 <span class="cmt"># create namespace + ResourceQuota + LimitRange</span>
 <span class="cmd">kubectl apply -f k8s/namespaces/tenant-cfd4486.yaml</span>
 <span class="cmd">kubectl apply -f k8s/namespaces/tenant-3622fab.yaml</span>
+<span class="cmd">kubectl apply -f k8s/namespaces/tenant-3bf9bd5.yaml</span>
 <span class="cmd">kubectl get ns | grep linexa-</span>
 
-<span class="cmt"># apply tenant isolation NetworkPolicy to each namespace</span>
-<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-cfd4486</span>
-<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-3622fab</span>
+<span class="cmt"># apply tenant isolation to all 4 namespaces</span>
+<span class="cmd">for ns in linexa-dev linexa-tenant-cfd4486 linexa-tenant-3622fab linexa-tenant-3bf9bd5; do</span>
+<span class="cmd">  kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n $ns</span>
+<span class="cmd">done</span>
+
+<span class="cmt"># open CP MySQL port 3306 to tenant namespaces (for enabled flag check)</span>
+<span class="cmd">kubectl apply -f k8s/network-policies/control-plane-mysql-tenant-read.yaml -n linexa-dev</span>
           </div>
           <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-top:6px">
-            <strong style="color:var(--teal)">NetworkPolicy enforced</strong> — blocks all cross-namespace pod traffic. Only kube-system (LB health checks) and intra-namespace pods are allowed in. Egress allows DNS + internet (GAR pulls).
+            <strong style="color:var(--teal)">NetworkPolicy enforced</strong> — blocks all cross-namespace pod traffic. The second policy selectively re-opens MySQL 3306 in linexa-dev so tenant PHP can check the <span class="mono" style="font-size:10.5px">enabled</span> flag.
           </div>
 
           <!-- step 3: deploy helm -->
-          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">③ Deploy each tenant with Helm</div>
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">③ Deploy all tenants with Helm (loop)</div>
           <div class="code-block">
-<span class="cmt"># Tenant cfd4486</span>
-<span class="cmd">helm upgrade --install tenant-cfd4486 ./helm/tenant \
-  -n linexa-tenant-cfd4486 \
-  -f ./helm/tenant-cfd4486.yaml \
-  --set image.tag=0.0.1</span>
-
-<span class="cmt"># Tenant 3622fab</span>
-<span class="cmd">helm upgrade --install tenant-3622fab ./helm/tenant \
-  -n linexa-tenant-3622fab \
-  -f ./helm/tenant-3622fab.yaml \
-  --set image.tag=0.0.1</span>
+<span class="cmt"># Always pass --set tenantId, image.repository, and image.tag — values.yaml defaults to "unknown"</span>
+<span class="cmd">TAG=0.0.12</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  helm upgrade --install tenant-${tenant} ./helm/tenant \
+    -n linexa-tenant-${tenant} \
+    --set tenantId=${tenant} \
+    --set image.repository=europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant} \
+    --set image.tag=${TAG}</span>
+<span class="cmd">done</span>
           </div>
 
           <!-- step 4: hosts file -->
           <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">④ Add tenant subdomains to Windows hosts file (run as Administrator)</div>
-          <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Get the same Load Balancer IP you used for <span class="mono">dev.linexa.eu</span>:</div>
+          <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Get the Load Balancer IPs (one per tenant Ingress):</div>
           <div class="code-block">
-<span class="cmd">kubectl get ingress -A</span>   <span class="cmt"># copy the ADDRESS column value</span>
+<span class="cmd">kubectl get ingress -A</span>   <span class="cmt"># copy the ADDRESS column — each tenant has its own LB IP</span>
           </div>
-          <div style="font-size:12px;color:var(--text-2);margin:6px 0">Then add the two entries (replace <span class="mono">LB_IP</span>):</div>
+          <div style="font-size:12px;color:var(--text-2);margin:6px 0">Add all three entries (replace <span class="mono">LB_IP_*</span>):</div>
           <div class="code-block">
 <span class="cmt"># In PowerShell (Administrator)</span>
-<span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n&lt;LB_IP&gt;  dev.tenant-cfd4486.linexa.eu"</span>
-<span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "&lt;LB_IP&gt;  dev.tenant-3622fab.linexa.eu"</span>
+<span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n&lt;LB_IP_1&gt;  dev.tenant-cfd4486.linexa.eu"</span>
+<span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "&lt;LB_IP_2&gt;  dev.tenant-3622fab.linexa.eu"</span>
+<span class="cmd">Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "&lt;LB_IP_3&gt;  dev.tenant-3bf9bd5.linexa.eu"</span>
           </div>
 
           <!-- step 5: verify -->
           <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:16px 0 6px">⑤ Verify — each tenant has its own pod</div>
           <div class="code-block">
-<span class="cmd">kubectl get pods -n linexa-tenant-cfd4486</span>   <span class="cmt"># NAME READY STATUS</span>
-<span class="cmd">kubectl get pods -n linexa-tenant-3622fab</span>   <span class="cmt"># tenant-3622fab-xxx 1/1 Running</span>
+<span class="cmd">kubectl get pods -A | grep linexa-tenant</span>   <span class="cmt"># all 3 tenants: 1/1 Running</span>
+<span class="cmd">kubectl get ingress -A | grep tenant</span>          <span class="cmt"># ADDRESS column = LB IP per tenant</span>
 
-<span class="cmt"># get the tenant LB IP — ADDRESS column (each tenant Ingress gets its own GCP LB)</span>
-<span class="cmd">kubectl get ingress -A</span>
+<span class="cmt"># spot-check IMAGE_TAG in page header</span>
+<span class="cmd">curl -s http://dev.tenant-cfd4486.linexa.eu | grep -o 'IMAGE_TAG[^&lt;]*'</span>
           </div>
 
           <!-- isolation proof -->
           <div style="background:var(--emerald-soft);border:1px solid var(--emerald);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--text-2);margin-top:8px">
             <span style="color:var(--emerald);font-weight:700">Isolation proof</span> — bring one tenant down without touching anything else:<br>
             <span class="mono" style="font-size:11px">helm uninstall tenant-cfd4486 -n linexa-tenant-cfd4486</span><br>
-            <span style="color:var(--text-3);margin-top:4px;display:block">dev.linexa.eu still works. dev.tenant-3622fab.linexa.eu still works. Zero blast radius.</span>
+            <span style="color:var(--text-3);margin-top:4px;display:block">dev.linexa.eu still works. dev.tenant-3622fab.linexa.eu still works. dev.tenant-3bf9bd5.linexa.eu still works. Zero blast radius.</span>
           </div>
         </div></div>
 
@@ -2719,19 +2727,27 @@ your pods (dev):
           <div class="phase-subtitle">The nginx config and PHP source are baked into the Docker image at build time. Any change to <span class="mono">nginx/default.conf</span> or <span class="mono">src/</span> requires a rebuild, a new push to GAR, and a rollout restart so the pod pulls the new image.</div>
 
           <div class="code-block">
-<span class="cmt"># 1. Laptop — rebuild + push (bump tag if you want to keep history)</span>
-<span class="cmd">docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1 app/tenants/cfd4486</span>
-<span class="cmd">docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-cfd4486:0.0.1</span>
+<span class="cmt"># 1. Laptop — rebuild + push all tenants (use loop, bump tag)</span>
+<span class="cmd">TAG=0.0.13</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG} app/tenants/${tenant}</span>
+<span class="cmd">  docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG}</span>
+<span class="cmd">done</span>
 
-<span class="cmt"># 2. Bastion — rollout restart forces pods to pull the new image</span>
-<span class="cmd">kubectl rollout restart deployment/tenant-cfd4486 -n linexa-tenant-cfd4486</span>
-<span class="cmd">kubectl rollout status  deployment/tenant-cfd4486 -n linexa-tenant-cfd4486</span>   <span class="cmt"># wait for rollout</span>
+<span class="cmt"># 2. Helm upgrade (picks up new tag, re-injects IMAGE_TAG env var)</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  helm upgrade --install tenant-${tenant} ./helm/tenant \
+    -n linexa-tenant-${tenant} \
+    --set tenantId=${tenant} \
+    --set image.repository=europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant} \
+    --set image.tag=${TAG}</span>
+<span class="cmd">done</span>
 
-<span class="cmt"># check all linexa pods at once</span>
-<span class="cmd">kubectl get pods -A | grep linexa-</span>
+<span class="cmt"># 3. Verify all pods running with new tag</span>
+<span class="cmd">kubectl get pods -A | grep linexa-tenant</span>
           </div>
           <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2)">
-            <strong style="color:var(--amber)">imagePullPolicy: IfNotPresent</strong> — if you reuse the same tag (<span class="mono">0.0.1</span>), the node won't pull the new image unless you restart the pod. Either bump the tag or always run <span class="mono">kubectl rollout restart</span> after pushing.
+            <strong style="color:var(--amber)">Always bump the tag</strong> — <span class="mono">imagePullPolicy: IfNotPresent</span> means reusing the same tag won't pull the new image. Bump TAG in the loop and the <span class="mono">IMAGE_TAG</span> env var in the page header confirms the running version.
           </div>
         </div></div>
 
@@ -2803,7 +2819,7 @@ your pods (dev):
 
           <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">⑦ Redeploy control plane to pick up the new link</div>
           <div class="code-block">
-<span class="cmd">helm upgrade linexa-dev ./helm/control-plane \
+<span class="cmd">helm upgrade control-plane ./helm/control-plane \
   -n linexa-dev \
   -f helm/control-plane/values.yaml \
   -f helm/control-plane/values-dev.yaml</span>
@@ -2851,7 +2867,7 @@ your pods (dev):
 <span class="cmd">git add app/control-plane/src/index.php</span>
 <span class="cmd">git commit -m "chore: remove tenant cfd4486"</span>
 <span class="cmd">git -c http.sslVerify=false push origin main</span>
-<span class="cmd">helm upgrade linexa-dev ./helm/control-plane \
+<span class="cmd">helm upgrade control-plane ./helm/control-plane \
   -n linexa-dev \
   -f helm/control-plane/values-dev.yaml \
   --set image.tag=$TAG</span>
@@ -2879,6 +2895,9 @@ your pods (dev):
 <span class="cmd">curl -s http://dev.tenant-3622fab.linexa.eu | grep -o 'tenant: [a-z0-9]*'</span>
 <span class="cmt"># → tenant: 3622fab</span>
 
+<span class="cmd">curl -s http://dev.tenant-3bf9bd5.linexa.eu | grep -o 'tenant: [a-z0-9]*'</span>
+<span class="cmt"># → tenant: 3bf9bd5</span>
+
 <span class="cmt"># Negative — wrong Host header must NOT bleed into another tenant</span>
 <span class="cmd">curl -s -o /dev/null -w "%{http_code}" \
   --header "Host: dev.tenant-cfd4486.linexa.eu" \
@@ -2889,6 +2908,7 @@ your pods (dev):
 <span class="cmd">kubectl get pods -n linexa-dev</span>
 <span class="cmd">kubectl get pods -n linexa-tenant-cfd4486</span>
 <span class="cmd">kubectl get pods -n linexa-tenant-3622fab</span>
+<span class="cmd">kubectl get pods -n linexa-tenant-3bf9bd5</span>
           </div>
 
           <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -2897,17 +2917,20 @@ your pods (dev):
               GCP HTTP(S) LB enforces hostname routing — a request for an unknown host gets a 404/502. Namespaces are separate; pods on the same node share the kernel network stack.
             </div>
             <div style="padding:10px 12px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--border);font-size:11.5px;color:var(--text-2)">
-              <div style="font-weight:700;color:var(--text-1);margin-bottom:4px">Stronger isolation — NetworkPolicy</div>
-              By default pods in different namespaces can still reach each other inside the cluster. Apply <span class="mono" style="font-size:10px">k8s/network-policies/tenant-isolation.yaml</span> to each tenant namespace to drop all cross-tenant pod traffic.
+              <div style="font-weight:700;color:var(--text-1);margin-bottom:4px">NetworkPolicy isolation (active)</div>
+              <span class="mono" style="font-size:10px">tenant-isolation.yaml</span> is applied to all 4 namespaces — all cross-namespace pod traffic is blocked. <span class="mono" style="font-size:10px">control-plane-mysql-tenant-read.yaml</span> selectively re-opens MySQL 3306 in linexa-dev so tenants can check the <span class="mono" style="font-size:10px">enabled</span> flag.
             </div>
           </div>
 
           <div class="code-block" style="margin-top:10px">
-<span class="cmt"># Block cross-tenant pod-to-pod traffic</span>
-<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-cfd4486</span>
-<span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n linexa-tenant-3622fab</span>
+<span class="cmt"># tenant-isolation applied to all 4 namespaces</span>
+<span class="cmd">for ns in linexa-dev linexa-tenant-cfd4486 linexa-tenant-3622fab linexa-tenant-3bf9bd5; do</span>
+<span class="cmd">  kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n $ns</span>
+<span class="cmd">done</span>
+<span class="cmt"># control-plane MySQL exception applied only to linexa-dev</span>
+<span class="cmd">kubectl apply -f k8s/network-policies/control-plane-mysql-tenant-read.yaml -n linexa-dev</span>
 
-<span class="cmt"># Verify — from inside cfd4486 pod, 3622fab should now be unreachable</span>
+<span class="cmt"># Verify — from inside cfd4486 pod, 3622fab should be unreachable</span>
 <span class="cmd">kubectl exec -n linexa-tenant-cfd4486 deploy/tenant-cfd4486 -- \
   curl -s --max-time 3 http://tenant-3622fab.linexa-tenant-3622fab.svc.cluster.local</span>
 <span class="cmt"># → connection timed out (blocked)</span>
@@ -2916,7 +2939,7 @@ your pods (dev):
           <div style="margin-top:8px;background:var(--emerald-soft);border:1px solid var(--emerald);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--text-2)">
             <span style="color:var(--emerald);font-weight:700">Blast-radius test</span> — uninstall one tenant and verify the others are unaffected:<br>
             <span class="mono" style="font-size:11px">helm uninstall tenant-cfd4486 -n linexa-tenant-cfd4486</span><br>
-            <span style="color:var(--text-3);margin-top:4px;display:block">dev.linexa.eu still works. dev.tenant-3622fab.linexa.eu still works. Zero blast radius.</span>
+            <span style="color:var(--text-3);margin-top:4px;display:block">dev.linexa.eu still works. dev.tenant-3622fab.linexa.eu still works. dev.tenant-3bf9bd5.linexa.eu still works. Zero blast radius.</span>
           </div>
         </div></div>
 
@@ -2948,6 +2971,130 @@ your pods (dev):
     </div>
   </div>
 
+  <!-- Tenant Apps -->
+  <div id="sec-tenants" class="section hidden">
+    <div class="section-hero"><div class="section-eyebrow">multi-tenant</div><div class="section-title">Tenant apps</div><div class="section-desc">Three isolated PHP 8.2-fpm + MySQL tenants, each in its own namespace. The control plane manages them via a shared MySQL database — enable/disable without touching k8s.</div></div>
+    <div class="section-body">
+
+      <div class="subsection-title">Active tenants</div>
+      <div class="cards-grid" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-stripe" style="background:#a78bfa"></div>
+          <div class="card-body">
+            <div class="card-name" style="font-family:var(--mono)">cfd4486</div>
+            <div class="card-desc"><span class="mono">linexa-tenant-cfd4486</span> · <span class="mono" style="color:#a78bfa">dev.tenant-cfd4486.linexa.eu</span><br>Users: Alice, Bob</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-stripe" style="background:#34d399"></div>
+          <div class="card-body">
+            <div class="card-name" style="font-family:var(--mono)">3622fab</div>
+            <div class="card-desc"><span class="mono">linexa-tenant-3622fab</span> · <span class="mono" style="color:#34d399">dev.tenant-3622fab.linexa.eu</span><br>Users: Carol, Dave</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-stripe" style="background:#fb923c"></div>
+          <div class="card-body">
+            <div class="card-name" style="font-family:var(--mono)">3bf9bd5</div>
+            <div class="card-desc"><span class="mono">linexa-tenant-3bf9bd5</span> · <span class="mono" style="color:#fb923c">dev.tenant-3bf9bd5.linexa.eu</span><br>Users: Eve, Frank</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection-title">IMAGE_TAG env var</div>
+      <div style="font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6">Every tenant pod receives an <span class="mono">IMAGE_TAG</span> environment variable injected by the Helm chart (<span class="mono">helm/tenant/templates/deployment.yaml</span>). The PHP page reads it with <span class="mono">getenv('IMAGE_TAG')</span> and shows it in the page header — each tenant in its own accent colour. Lets you confirm at a glance which image version is running without <span class="mono">kubectl describe pod</span>.</div>
+      <div class="code-block" style="margin-bottom:20px">
+<span class="cmt"># Helm injects it at deploy time (tenant chart)</span>
+<span class="cmt">env:</span>
+<span class="cmt">  - name: IMAGE_TAG</span>
+<span class="cmt">    value: "{{ .Values.image.tag }}"   # → e.g. 0.0.12</span>
+
+<span class="cmt"># PHP reads it</span>
+<span class="cmt">htmlspecialchars(getenv('IMAGE_TAG') ?: 'dev')</span>
+      </div>
+
+      <div class="subsection-title">Control-plane MySQL management</div>
+      <div style="font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6">The control-plane MySQL (<span class="mono">mysql.linexa-dev.svc.cluster.local</span>) holds an <span class="mono">organizations</span> table and a <span class="mono">tenants</span> table with an <span class="mono">enabled</span> column. The control plane UI lets the admin toggle any tenant on or off — one SQL UPDATE, no pod restarts needed.</div>
+      <div class="code-block" style="margin-bottom:8px">
+<span class="cmt">-- control-plane MySQL schema (linexa-dev namespace)</span>
+<span class="cmt">CREATE TABLE organizations (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100));</span>
+<span class="cmt">CREATE TABLE tenants (</span>
+<span class="cmt">  id INT PRIMARY KEY AUTO_INCREMENT,</span>
+<span class="cmt">  organization_id INT,</span>
+<span class="cmt">  namespace VARCHAR(100),     -- e.g. linexa-tenant-cfd4486</span>
+<span class="cmt">  enabled TINYINT DEFAULT 1</span>
+<span class="cmt">);</span>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-bottom:20px">
+        To disable a tenant: <span class="mono" style="font-size:10.5px">UPDATE tenants SET enabled=0 WHERE namespace='linexa-tenant-cfd4486';</span> — the next HTTP request to that tenant gets a <strong>503 Tenant Disabled</strong> page immediately. No Helm or kubectl needed.
+      </div>
+
+      <div class="subsection-title">Tenant disable flow</div>
+      <div style="font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6">On every request, the tenant PHP checks the control-plane MySQL for its own <span class="mono">enabled</span> flag. If the row says <span class="mono">enabled=0</span>, it returns HTTP 503 and exits before rendering any content. If the control-plane MySQL is unreachable, it <strong>fails open</strong> (shows the tenant normally) so a control-plane outage does not cascade to tenants.</div>
+      <div class="code-block" style="margin-bottom:20px">
+<span class="cmt"># PHP flow (simplified)</span>
+<span class="cmt">$cp = new PDO('mysql:host=mysql.linexa-dev.svc.cluster.local;...', ...);</span>
+<span class="cmt">$row = $cp->prepare('SELECT enabled FROM tenants WHERE namespace=?')-&gt;execute([$ns]);</span>
+<span class="cmt">if ($row['enabled'] === 0) { http_response_code(503); echo '&lt;Tenant Disabled page&gt;'; exit; }</span>
+<span class="cmt">// fail-open: catch(Exception $e) { /* show tenant normally */ }</span>
+      </div>
+
+      <div class="subsection-title">NetworkPolicies</div>
+      <div style="font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6">Two NetworkPolicy files govern cluster-wide isolation. Both are in <span class="mono">k8s/network-policies/</span>.</div>
+      <div style="margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="padding:12px 14px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--border)">
+          <div style="font-weight:700;font-size:11.5px;color:var(--text-1);margin-bottom:6px;font-family:var(--mono)">tenant-isolation.yaml</div>
+          <div style="font-size:11.5px;color:var(--text-2);line-height:1.5">Applied to <strong>all 4 namespaces</strong> (linexa-dev + 3 tenants). Blocks all cross-namespace pod traffic. Allows: same-namespace pods, kube-system (LB health checks), port 80 from GCP LB, DNS egress, internet egress.</div>
+        </div>
+        <div style="padding:12px 14px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--border)">
+          <div style="font-weight:700;font-size:11.5px;color:var(--text-1);margin-bottom:6px;font-family:var(--mono)">control-plane-mysql-tenant-read.yaml</div>
+          <div style="font-size:11.5px;color:var(--text-2);line-height:1.5">Applied <strong>only to linexa-dev</strong>. Opens MySQL port 3306 ingress from any namespace labeled <span class="mono" style="font-size:10px">linexa/tenant: &lt;id&gt;</span>. This is the exception that lets tenant PHP read the <span class="mono" style="font-size:10px">enabled</span> flag.</div>
+        </div>
+      </div>
+      <div class="code-block" style="margin-bottom:8px">
+<span class="cmt"># Apply isolation to all 4 namespaces</span>
+<span class="cmd">for ns in linexa-dev linexa-tenant-cfd4486 linexa-tenant-3622fab linexa-tenant-3bf9bd5; do</span>
+<span class="cmd">  kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n $ns</span>
+<span class="cmd">done</span>
+
+<span class="cmt"># Apply the CP MySQL exception only to linexa-dev</span>
+<span class="cmd">kubectl apply -f k8s/network-policies/control-plane-mysql-tenant-read.yaml -n linexa-dev</span>
+
+<span class="cmt"># Verify tenant namespace labels (needed by matchExpressions selector)</span>
+<span class="cmd">kubectl get ns --show-labels | grep linexa-tenant</span>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:var(--r);padding:10px 12px;font-size:11.5px;color:var(--text-2);margin-bottom:20px">
+        <strong style="color:var(--teal)">Namespace label required</strong> — the control-plane-mysql-tenant-read policy uses <span class="mono" style="font-size:10px">matchExpressions: [{key: linexa/tenant, operator: Exists}]</span>. Each tenant namespace must carry the label <span class="mono" style="font-size:10px">linexa/tenant: &lt;id&gt;</span> (set in its namespace manifest) for the policy to open port 3306.
+      </div>
+
+      <div class="subsection-title">Loop-based deploy (all 3 tenants)</div>
+      <div style="font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6">Rebuild images only when PHP source changes. Re-run helm upgrade on every config or tag change. Use the loop to keep all 3 tenants in sync.</div>
+      <div class="code-block" style="margin-bottom:8px">
+<span class="cmt"># ① Build + push (only when app/tenants/&lt;id&gt;/src/ changed)</span>
+<span class="cmd">TAG=0.0.12</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG} \</span>
+<span class="cmt">    app/tenants/${tenant}</span>
+<span class="cmd">  docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG}</span>
+<span class="cmd">done</span>
+
+<span class="cmt"># ② Deploy (always — picks up image tag + config changes)</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  helm upgrade --install tenant-${tenant} ./helm/tenant \</span>
+<span class="cmt">    -n linexa-tenant-${tenant} \</span>
+<span class="cmt">    --set tenantId=${tenant} \</span>
+<span class="cmt">    --set image.repository=europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant} \</span>
+<span class="cmt">    --set image.tag=${TAG}</span>
+<span class="cmd">done</span>
+
+<span class="cmt"># ③ Verify</span>
+<span class="cmd">kubectl get pods -n linexa-tenant-cfd4486 -n linexa-tenant-3622fab -n linexa-tenant-3bf9bd5</span>
+<span class="cmd">kubectl get ingress -A | grep tenant</span>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Quick Start -->
   <div id="sec-quickstart" class="section hidden">
     <div class="section-hero"><div class="section-eyebrow">Reference</div><div class="section-title">All commands</div><div class="section-desc">Raw commands grouped by workflow — no make required on Windows.</div></div>
@@ -2973,32 +3120,55 @@ your pods (dev):
 <span class="cmd">gcloud container clusters get-credentials linexa --zone europe-west1-b --project replenit-lab</span>
 <span class="cmd">terraform destroy</span>                                 <span class="cmt"># teardown (stops billing)</span>
       </div>
-      <div class="subsection-title">Helm (lint / deploy / debug)</div>
+      <div class="subsection-title">Helm — control plane</div>
       <div class="code-block" style="margin-bottom:16px">
 <span class="cmt"># Lint &amp; dry-run</span>
 <span class="cmd">helm lint helm/control-plane -f helm/control-plane/values-dev.yaml</span>
-<span class="cmd">helm template linexa-dev helm/control-plane -f helm/control-plane/values.yaml -f helm/control-plane/values-dev.yaml</span>
+<span class="cmd">helm template control-plane helm/control-plane -f helm/control-plane/values.yaml -f helm/control-plane/values-dev.yaml</span>
 
-<span class="cmt"># Deploy / upgrade</span>
+<span class="cmt"># Deploy / upgrade (release name: control-plane)</span>
 <span class="cmd">kubectl apply -f k8s/namespaces/dev.yaml</span>
-<span class="cmd">helm upgrade --install linexa-dev ./helm/control-plane \
+<span class="cmd">helm upgrade --install control-plane ./helm/control-plane \
   -f helm/control-plane/values.yaml \
   -f helm/control-plane/values-dev.yaml \
   -n linexa-dev --create-namespace</span>
 
 <span class="cmt"># Watch + debug</span>
 <span class="cmd">kubectl get pods -n linexa-dev -w</span>
-<span class="cmd">kubectl -n linexa-dev logs deploy/linexa-dev-app -c nginx -f</span>
-<span class="cmd">kubectl -n linexa-dev logs deploy/linexa-dev-app -c php-fpm -f</span>
+<span class="cmd">kubectl -n linexa-dev logs deploy/control-plane-app -c nginx -f</span>
+<span class="cmd">kubectl -n linexa-dev logs deploy/control-plane-app -c php-fpm -f</span>
 
 <span class="cmt"># History &amp; rollback</span>
-<span class="cmd">helm status linexa-dev -n linexa-dev</span>
-<span class="cmd">helm history linexa-dev -n linexa-dev</span>
-<span class="cmd">helm rollback linexa-dev -n linexa-dev</span>
+<span class="cmd">helm status control-plane -n linexa-dev</span>
+<span class="cmd">helm history control-plane -n linexa-dev</span>
+<span class="cmd">helm rollback control-plane -n linexa-dev</span>
 
 <span class="cmt"># Teardown</span>
-<span class="cmd">helm uninstall linexa-dev -n linexa-dev</span>
+<span class="cmd">helm uninstall control-plane -n linexa-dev</span>
 <span class="cmd">kubectl delete namespace linexa-dev</span>
+      </div>
+
+      <div class="subsection-title">Helm — tenant deploy loop (all 3 tenants)</div>
+      <div class="code-block" style="margin-bottom:16px">
+<span class="cmt"># ① Build + push (only when PHP source changed)</span>
+<span class="cmd">TAG=0.0.12</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG} app/tenants/${tenant}</span>
+<span class="cmd">  docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant}:${TAG}</span>
+<span class="cmd">done</span>
+
+<span class="cmt"># ② Deploy / upgrade (always — helm upgrade is idempotent)</span>
+<span class="cmd">for tenant in cfd4486 3622fab 3bf9bd5; do</span>
+<span class="cmd">  helm upgrade --install tenant-${tenant} ./helm/tenant \
+    -n linexa-tenant-${tenant} \
+    --set tenantId=${tenant} \
+    --set image.repository=europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-${tenant} \
+    --set image.tag=${TAG}</span>
+<span class="cmd">done</span>
+
+<span class="cmt"># ③ Verify all 3 tenants running</span>
+<span class="cmd">kubectl get pods -A | grep linexa-tenant</span>
+<span class="cmd">kubectl get ingress -A | grep tenant</span>
       </div>
     </div>
   </div>
