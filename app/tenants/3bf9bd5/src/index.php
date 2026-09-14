@@ -3,6 +3,41 @@ $tenantId  = '3bf9bd5';
 $namespace = 'linexa-tenant-3bf9bd5';
 $now       = new DateTime('now', new DateTimeZone('UTC'));
 
+// ── Check enabled status from control plane ───────────────────────────────────
+try {
+    $cp = new PDO(
+        'mysql:host=mysql.linexa-dev.svc.cluster.local;port=3306;dbname=linexa;connect_timeout=2',
+        'linexa', 'linexapass',
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 2]
+    );
+    $stmt = $cp->prepare('SELECT enabled FROM tenants WHERE namespace = ? LIMIT 1');
+    $stmt->execute([$namespace]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row && (int)$row['enabled'] === 0) {
+        http_response_code(503);
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1"/>
+        <title>Tenant Disabled</title>
+        <style>
+          body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;
+               display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+          .box{text-align:center;padding:3rem;}
+          .icon{font-size:3rem;margin-bottom:1rem;}
+          h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem;}
+          p{font-family:monospace;font-size:.85rem;color:#64748b;}
+        </style></head><body>
+        <div class="box">
+          <div class="icon">🔒</div>
+          <h1>Tenant Disabled</h1>
+          <p>' . htmlspecialchars($namespace) . '</p>
+          <p style="margin-top:.5rem">This tenant has been disabled by the platform administrator.</p>
+        </div></body></html>';
+        exit;
+    }
+} catch (Exception $e) {
+    // control plane unreachable — fail open, show tenant normally
+}
+
 // ── Own database ──────────────────────────────────────────────────────────────
 $ownUsers = [];
 $ownError = null;
