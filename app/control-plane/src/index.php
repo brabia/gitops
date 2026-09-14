@@ -2,31 +2,93 @@
 $namespace = 'linexa-dev';
 $now       = new DateTime('now', new DateTimeZone('UTC'));
 
-// ── Own database ──────────────────────────────────────────────────────────────
-$ownUsers = [];
-$ownError = null;
-$ownQuery = 'SELECT id, name, email, created_at FROM users ORDER BY id';
-
+// ── DB connection ──────────────────────────────────────────────────────────────
+$db      = null;
+$dbError = null;
 try {
     $db = new PDO(
         'mysql:host=mysql.linexa-dev.svc.cluster.local;port=3306;dbname=linexa;connect_timeout=10',
         'linexa', 'linexapass',
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]
     );
+} catch (Exception $e) {
+    $dbError = $e->getMessage();
+}
+
+// ── Schema ────────────────────────────────────────────────────────────────────
+if ($db) {
+    $db->exec('CREATE TABLE IF NOT EXISTS organizations (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        name       VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )');
+    $db->exec('CREATE TABLE IF NOT EXISTS tenants (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        org_id     INT NOT NULL,
+        name       VARCHAR(100) NOT NULL,
+        namespace  VARCHAR(100) NOT NULL,
+        url        VARCHAR(255) NOT NULL,
+        enabled    TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )');
     $db->exec('CREATE TABLE IF NOT EXISTS users (
         id         INT AUTO_INCREMENT PRIMARY KEY,
         name       VARCHAR(100) NOT NULL,
         email      VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )');
+
+    // ── Seed ──────────────────────────────────────────────────────────────────
+    if ((int)$db->query('SELECT COUNT(*) FROM organizations')->fetchColumn() === 0) {
+        $db->exec("INSERT INTO organizations (name) VALUES
+            ('Linexa Demo Org'),
+            ('Internal Platform')");
+    }
+    if ((int)$db->query('SELECT COUNT(*) FROM tenants')->fetchColumn() === 0) {
+        $orgA = (int)$db->query('SELECT id FROM organizations ORDER BY id LIMIT 1')->fetchColumn();
+        $orgB = (int)$db->query('SELECT id FROM organizations ORDER BY id LIMIT 1 OFFSET 1')->fetchColumn();
+        $db->exec("INSERT INTO tenants (org_id, name, namespace, url) VALUES
+            ($orgA, 'Tenant cfd4486', 'linexa-tenant-cfd4486', 'http://dev.tenant-cfd4486.linexa.eu'),
+            ($orgA, 'Tenant 3622fab', 'linexa-tenant-3622fab', 'http://dev.tenant-3622fab.linexa.eu'),
+            ($orgB, 'Tenant 3bf9bd5', 'linexa-tenant-3bf9bd5', 'http://dev.tenant-3bf9bd5.linexa.eu')");
+    }
     if ((int)$db->query('SELECT COUNT(*) FROM users')->fetchColumn() === 0) {
         $db->exec("INSERT INTO users (name, email) VALUES
             ('Admin',   'admin@linexa.eu'),
             ('Manager', 'manager@linexa.eu')");
     }
-    $ownUsers = $db->query($ownQuery)->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    $ownError = $e->getMessage();
+}
+
+// ── Toggle enable/disable ─────────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tenant_id']) && $db) {
+    $tid  = (int)$_POST['tenant_id'];
+    $stmt = $db->prepare('UPDATE tenants SET enabled = IF(enabled = 1, 0, 1) WHERE id = ?');
+    $stmt->execute([$tid]);
+    header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
+    exit;
+}
+
+// ── Fetch orgs → tenants ──────────────────────────────────────────────────────
+$orgs = [];
+if ($db) {
+    foreach ($db->query('SELECT * FROM organizations ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) as $org) {
+        $stmt = $db->prepare('SELECT * FROM tenants WHERE org_id = ? ORDER BY id');
+        $stmt->execute([$org['id']]);
+        $org['tenants'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $orgs[]         = $org;
+    }
+}
+
+// ── Own users ─────────────────────────────────────────────────────────────────
+$ownUsers = [];
+$ownError = null;
+$ownQuery = 'SELECT id, name, email, created_at FROM users ORDER BY id';
+if ($db) {
+    try {
+        $ownUsers = $db->query($ownQuery)->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $ownError = $e->getMessage();
+    }
 }
 
 // ── Cross-tenant isolation test ───────────────────────────────────────────────
@@ -49,13 +111,6 @@ foreach ($crossTargets as $ns => $host) {
         $crossResults[$ns] = ['ok' => false, 'error' => $e->getMessage()];
     }
 }
-
-// Tenant index for nav links
-$tenants = [
-    'cfd4486' => 'http://dev.tenant-cfd4486.linexa.eu',
-    '3622fab' => 'http://dev.tenant-3622fab.linexa.eu',
-    '3bf9bd5' => 'http://dev.tenant-3bf9bd5.linexa.eu',
-];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -67,46 +122,78 @@ $tenants = [
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0;
            min-height: 100vh; padding: 2rem 1rem; }
-    .wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+    .wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
 
+    /* ── Header ── */
     .header { background: linear-gradient(135deg, #1e293b 0%, #0f2038 100%);
               border: 1px solid #334155; border-radius: 12px; padding: 2rem; text-align: center; }
-    .badge { font-family: monospace; font-size: .75rem; color: #38bdf8;
-             background: #0c1a2e; border: 1px solid #0369a1; border-radius: 6px;
-             padding: .2rem .75rem; display: inline-block; margin-bottom: 1rem; }
-    h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: .25rem; }
+    .badge  { font-family: monospace; font-size: .75rem; color: #38bdf8;
+              background: #0c1a2e; border: 1px solid #0369a1; border-radius: 6px;
+              padding: .2rem .75rem; display: inline-block; margin-bottom: 1rem; }
+    h1   { font-size: 1.75rem; font-weight: 700; margin-bottom: .25rem; }
     .meta { font-family: monospace; font-size: .8rem; color: #64748b; }
 
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.25rem; }
+    /* ── Cards ── */
+    .card       { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.25rem; }
     .card-title { font-size: .7rem; font-weight: 700; letter-spacing: .08em;
-                  text-transform: uppercase; color: #64748b; margin-bottom: .75rem; }
+                  text-transform: uppercase; color: #64748b; margin-bottom: 1rem; }
 
+    /* ── Org section ── */
+    .org-block  { display: flex; flex-direction: column; gap: .75rem; }
+    .org-header { display: flex; align-items: center; gap: .6rem; margin-bottom: .25rem; }
+    .org-name   { font-size: .9rem; font-weight: 600; color: #cbd5e1; }
+    .org-badge  { font-family: monospace; font-size: .65rem; color: #94a3b8;
+                  background: #0f172a; border: 1px solid #334155; border-radius: 4px;
+                  padding: .1rem .4rem; }
+    .org-divider { border: none; border-top: 1px solid #1e3050; margin: .5rem 0 1rem; }
+
+    /* ── Tenant table ── */
+    table { width: 100%; border-collapse: collapse; }
+    th    { text-align: left; padding: .45rem .75rem; color: #64748b;
+            font-size: .68rem; text-transform: uppercase; letter-spacing: .07em;
+            border-bottom: 1px solid #334155; }
+    td    { padding: .55rem .75rem; border-bottom: 1px solid #1a2540;
+            font-size: .82rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .col-name { font-weight: 500; color: #e2e8f0; }
+    .col-ns   { font-family: monospace; font-size: .75rem; color: #7dd3fc; }
+    .col-url a { font-family: monospace; font-size: .75rem; color: #60a5fa; text-decoration: none; }
+    .col-url a:hover { text-decoration: underline; }
+
+    /* ── Status pill ── */
+    .pill         { display: inline-block; font-size: .65rem; font-weight: 700;
+                    padding: .15rem .55rem; border-radius: 99px; white-space: nowrap; }
+    .pill-enabled  { background: #14532d; color: #4ade80; border: 1px solid #166534; }
+    .pill-disabled { background: #1c1917; color: #78716c; border: 1px solid #44403c; }
+
+    /* ── Toggle button ── */
+    .btn-enable  { font-size: .7rem; font-weight: 600; padding: .25rem .65rem;
+                   border-radius: 6px; border: 1px solid #166534; background: #14532d;
+                   color: #4ade80; cursor: pointer; }
+    .btn-enable:hover  { background: #166534; }
+    .btn-disable { font-size: .7rem; font-weight: 600; padding: .25rem .65rem;
+                   border-radius: 6px; border: 1px solid #7f1d1d; background: #451a1a;
+                   color: #f87171; cursor: pointer; }
+    .btn-disable:hover { background: #7f1d1d; }
+
+    /* ── Query block ── */
     .query { font-family: monospace; font-size: .8rem; background: #0f172a;
              border: 1px solid #334155; border-radius: 6px; padding: .6rem .9rem;
              color: #7dd3fc; margin-bottom: .75rem; overflow-x: auto; white-space: nowrap; }
 
-    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-    th { text-align: left; padding: .4rem .6rem; color: #94a3b8;
-         font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
-         border-bottom: 1px solid #334155; }
-    td { padding: .45rem .6rem; border-bottom: 1px solid #1e293b; font-family: monospace; font-size: .8rem; }
-    tr:last-child td { border-bottom: none; }
-
+    /* ── Isolation rows ── */
     .iso-row { display: flex; align-items: flex-start; gap: .75rem;
                padding: .6rem 0; border-bottom: 1px solid #1e3050; }
     .iso-row:last-child { border-bottom: none; }
-    .pill { font-size: .65rem; font-weight: 700; padding: .15rem .5rem;
-            border-radius: 99px; white-space: nowrap; margin-top: .15rem; }
     .pill-blocked { background: #451a1a; color: #f87171; border: 1px solid #7f1d1d; }
     .pill-ok      { background: #14532d; color: #4ade80; border: 1px solid #166534; }
     .iso-ns  { font-family: monospace; font-size: .8rem; color: #cbd5e1; }
     .iso-err { font-family: monospace; font-size: .72rem; color: #94a3b8; margin-top: .25rem; word-break: break-all; }
 
-    .tenant-links { display: flex; gap: .75rem; flex-wrap: wrap; }
-    .tenant-link { font-family: monospace; font-size: .8rem; color: #60a5fa;
-                   background: #1e3a5f; border: 1px solid #2563eb; border-radius: 6px;
-                   padding: .35rem .75rem; text-decoration: none; }
-    .tenant-link:hover { background: #1d4ed8; color: #fff; }
+    /* ── Users table ── */
+    .users-td { font-family: monospace; font-size: .8rem; }
+    tr.user-row td { padding: .45rem .6rem; border-bottom: 1px solid #1e293b; }
+    tr.user-row:last-child td { border-bottom: none; }
 
     .error { color: #f87171; font-family: monospace; font-size: .8rem; }
   </style>
@@ -114,25 +201,88 @@ $tenants = [
 <body>
 <div class="wrap">
 
+  <!-- Header -->
   <div class="header">
     <div class="badge">control-plane · <?= $namespace ?></div>
-    <h1>Linexa / <?= $now->format('Y-m-d H:i:s') ?> UTC</h1>
-    <p class="meta">own pod &nbsp;·&nbsp; own namespace &nbsp;·&nbsp; own MySQL</p>
+    <h1>Linexa Control Plane</h1>
+    <p class="meta"><?= $now->format('Y-m-d H:i:s') ?> UTC &nbsp;·&nbsp; own pod &nbsp;·&nbsp; own namespace &nbsp;·&nbsp; own MySQL &nbsp;·&nbsp; <span style="color:#38bdf8"><?= htmlspecialchars(getenv('IMAGE_TAG') ?: 'dev') ?></span></p>
   </div>
 
-  <!-- tenant nav -->
+  <?php if ($dbError): ?>
+  <div class="card"><p class="error">⚠ Database error: <?= htmlspecialchars($dbError) ?></p></div>
+  <?php endif; ?>
+
+  <!-- ── Tenant management ── -->
   <div class="card">
-    <div class="card-title">Tenants</div>
-    <div class="tenant-links">
-      <?php foreach ($tenants as $id => $url): ?>
-        <a class="tenant-link" href="<?= $url ?>">→ tenant <?= $id ?></a>
-      <?php endforeach; ?>
-    </div>
+    <div class="card-title">Organizations &amp; Tenants</div>
+
+    <?php if (empty($orgs)): ?>
+      <p style="color:#64748b;font-size:.85rem">No organizations yet.</p>
+    <?php else: ?>
+      <div class="org-block">
+        <?php foreach ($orgs as $orgIdx => $org): ?>
+          <?php if ($orgIdx > 0): ?><hr class="org-divider"><?php endif; ?>
+          <div class="org-header">
+            <span class="org-name"><?= htmlspecialchars($org['name']) ?></span>
+            <span class="org-badge">org #<?= $org['id'] ?></span>
+            <span class="org-badge"><?= count($org['tenants']) ?> tenant<?= count($org['tenants']) !== 1 ? 's' : '' ?></span>
+          </div>
+
+          <?php if (empty($org['tenants'])): ?>
+            <p style="color:#64748b;font-size:.82rem;padding-left:.25rem">No tenants in this organization.</p>
+          <?php else: ?>
+          <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Namespace</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($org['tenants'] as $tenant): ?>
+              <tr>
+                <td class="col-name"><?= htmlspecialchars($tenant['name']) ?></td>
+                <td class="col-ns"><?= htmlspecialchars($tenant['namespace']) ?></td>
+                <td class="col-url">
+                  <?php if ($tenant['enabled']): ?>
+                    <a href="<?= htmlspecialchars($tenant['url']) ?>" target="_blank"><?= htmlspecialchars($tenant['url']) ?></a>
+                  <?php else: ?>
+                    <span style="color:#4b5563"><?= htmlspecialchars($tenant['url']) ?></span>
+                  <?php endif; ?>
+                </td>
+                <td>
+                  <span class="pill <?= $tenant['enabled'] ? 'pill-enabled' : 'pill-disabled' ?>">
+                    <?= $tenant['enabled'] ? 'Enabled' : 'Disabled' ?>
+                  </span>
+                </td>
+                <td>
+                  <form method="POST" style="display:inline">
+                    <input type="hidden" name="tenant_id" value="<?= (int)$tenant['id'] ?>">
+                    <?php if ($tenant['enabled']): ?>
+                      <button type="submit" class="btn-disable">Disable</button>
+                    <?php else: ?>
+                      <button type="submit" class="btn-enable">Enable</button>
+                    <?php endif; ?>
+                  </form>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+          </div>
+          <?php endif; ?>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   </div>
 
-  <!-- own users -->
+  <!-- ── Own users ── -->
   <div class="card">
-    <div class="card-title">Own database — mysql.<?= $namespace ?>.svc.cluster.local</div>
+    <div class="card-title">Control plane database — mysql.<?= $namespace ?>.svc.cluster.local</div>
     <div class="query"><?= htmlspecialchars($ownQuery) ?></div>
     <?php if ($ownError): ?>
       <p class="error">⚠ <?= htmlspecialchars($ownError) ?></p>
@@ -143,11 +293,11 @@ $tenants = [
         <thead><tr><th>id</th><th>name</th><th>email</th><th>created_at</th></tr></thead>
         <tbody>
           <?php foreach ($ownUsers as $row): ?>
-          <tr>
-            <td><?= $row['id'] ?></td>
-            <td><?= htmlspecialchars($row['name']) ?></td>
-            <td><?= htmlspecialchars($row['email']) ?></td>
-            <td><?= $row['created_at'] ?></td>
+          <tr class="user-row">
+            <td class="users-td"><?= $row['id'] ?></td>
+            <td class="users-td"><?= htmlspecialchars($row['name']) ?></td>
+            <td class="users-td"><?= htmlspecialchars($row['email']) ?></td>
+            <td class="users-td"><?= $row['created_at'] ?></td>
           </tr>
           <?php endforeach; ?>
         </tbody>
@@ -155,7 +305,7 @@ $tenants = [
     <?php endif; ?>
   </div>
 
-  <!-- isolation test -->
+  <!-- ── Isolation test ── -->
   <div class="card">
     <div class="card-title">Isolation test — cross-namespace MySQL queries from control plane</div>
     <?php foreach ($crossResults as $ns => $result): ?>
