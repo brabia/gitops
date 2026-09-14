@@ -2934,15 +2934,47 @@ your pods (dev):
           </div>
         </div></div>
 
-        <!-- STEP 12 — teardown -->
+        <!-- STEP 12 — sleep / teardown -->
         <div class="phase-block"><div class="phase-spine"><div class="phase-spine-dot"></div></div><div class="phase-right">
-          <div class="trigger-badge" style="background:var(--ruby-soft);color:var(--ruby)">when done</div>
-          <div class="phase-title">12. Destroy cluster (avoid GCP charges)</div>
-          <div class="phase-subtitle">GKE nodes bill by the hour. Destroy when not in use.</div>
+          <div class="trigger-badge" style="background:var(--ruby-soft);color:var(--ruby)">to avoid GCP charges</div>
+          <div class="phase-title">12. Sleep / destroy cluster</div>
+          <div class="phase-subtitle">GKE nodes bill by the hour. Three options depending on how long you're away.</div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:14px 0 4px">Option A — Scale pods to 0 <span style="font-weight:400;color:var(--text-3);font-size:11px">(cluster stays up · fastest wake)</span></div>
           <div class="code-block">
-<span class="cmd">cd terraform/gcp</span>
-<span class="cmd">terraform destroy</span>   <span class="cmt"># type "yes" — deletes cluster, VPC, node pool</span>
+<span class="cmt"># Sleep — scale everything to 0</span>
+<span class="cmd">for ns in linexa-dev linexa-tenant-cfd4486 linexa-tenant-3622fab linexa-tenant-3bf9bd5 linexa-tenant-3ab1087; do</span>
+<span class="cmd">  kubectl scale deployment --all --replicas=0 -n $ns</span>
+<span class="cmd">done</span>
+
+<span class="cmt"># Wake — scale back to 1</span>
+<span class="cmd">for ns in linexa-dev linexa-tenant-cfd4486 linexa-tenant-3622fab linexa-tenant-3bf9bd5 linexa-tenant-3ab1087; do</span>
+<span class="cmd">  kubectl scale deployment --all --replicas=1 -n $ns</span>
+<span class="cmd">done</span>
           </div>
+          <div style="font-size:11.5px;color:var(--text-3);margin-bottom:12px">💰 Saves almost nothing — node (e2-standard-4 ~$97/mo) and GCP LBs keep billing.</div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">Option B — Resize node pool to 0 <span style="font-weight:400;color:var(--text-3);font-size:11px">(recommended for overnight / weekend)</span></div>
+          <div class="code-block">
+<span class="cmt"># Sleep</span>
+<span class="cmd">gcloud container clusters resize linexa --node-pool linexa-nodes --num-nodes=0 --zone europe-west1-b</span>
+
+<span class="cmt"># Wake (~3 min)</span>
+<span class="cmd">gcloud container clusters resize linexa --node-pool linexa-nodes --num-nodes=1 --zone europe-west1-b</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-3);margin-bottom:12px">💰 Saves ~$97/mo node cost. Still pays GKE cluster fee (~$73/mo) + LBs.</div>
+
+          <div style="font-weight:700;font-size:12.5px;color:var(--text-1);margin:10px 0 4px">Option C — terraform destroy <span style="font-weight:400;color:var(--text-3);font-size:11px">(zero cost · for multi-day breaks)</span></div>
+          <div class="code-block">
+<span class="cmt"># Sleep</span>
+<span class="cmd">cd terraform/gcp &amp;&amp; terraform destroy</span>   <span class="cmt"># type "yes" — deletes cluster, VPC, node pool</span>
+
+<span class="cmt"># Wake (~8-10 min)</span>
+<span class="cmd">terraform apply</span>
+<span class="cmd">gcloud container clusters get-credentials linexa --zone europe-west1-b</span>
+<span class="cmt"># then re-apply namespaces + NetworkPolicies + helm releases</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-3)">💰 $0 when destroyed — the only option that fully stops billing.</div>
         </div></div>
 
       </div>

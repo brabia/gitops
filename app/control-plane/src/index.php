@@ -332,20 +332,23 @@ foreach ($crossTargets as $ns => $host) {
 <span class="cmd">kubectl apply -f k8s/namespaces/tenant-<?= $t['slug'] ?>.yaml</span>
 <span class="cmd">kubectl apply -f k8s/network-policies/tenant-isolation.yaml -n <?= $t['namespace'] ?></span>
 
-<span class="cmt"># ② build + push image</span>
+<span class="cmt"># ② create app files (copy from nearest tenant and update IDs)</span>
+<span class="cmd">cp -r app/tenants/cfd4486 app/tenants/<?= $t['slug'] ?>
+# edit app/tenants/<?= $t['slug'] ?>/src/index.php — replace cfd4486 → <?= $t['slug'] ?></span>
+
+<span class="cmt"># ③ build + push image</span>
 <span class="cmd">TAG=0.0.1
 docker build -t europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-<?= $t['slug'] ?>:$TAG \
-  app/tenants/<?= $t['slug'] ?>
-docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-<?= $t['slug'] ?>:$TAG</span>
+  app/tenants/<?= $t['slug'] . "\n" ?>docker push europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-<?= $t['slug'] ?>:$TAG</span>
 
-<span class="cmt"># ③ helm deploy</span>
+<span class="cmt"># ④ helm deploy</span>
 <span class="cmd">helm upgrade --install tenant-<?= $t['slug'] ?> ./helm/tenant \
   -n <?= $t['namespace'] ?> \
   --set tenantId=<?= $t['slug'] ?> \
   --set image.repository=europe-west1-docker.pkg.dev/replenit-lab/linexa/tenant-<?= $t['slug'] ?> \
   --set image.tag=$TAG</span>
 
-<span class="cmt"># ④ add to hosts file (PowerShell Admin)</span>
+<span class="cmt"># ⑤ add to hosts file (PowerShell Admin)</span>
 <span class="cmd">kubectl get ingress -n <?= $t['namespace'] ?>   # get LB IP
 Add-Content "C:\Windows\System32\drivers\etc\hosts" "&lt;LB_IP&gt;  dev.tenant-<?= $t['slug'] ?>.linexa.eu"</span></div>
     </div>
